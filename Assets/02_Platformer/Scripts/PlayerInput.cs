@@ -11,6 +11,7 @@ namespace Starter.Platformer
 		public Vector2 MoveDirection;
 		public bool Jump;
 		public bool Sprint;
+		public bool Interact;
 	}
 
 	/// <summary>
@@ -29,6 +30,7 @@ namespace Starter.Platformer
 			_input.MoveDirection = default;
 			_input.Jump = false;
 			_input.Sprint = false;
+			_input.Interact = false;
 		}
 
 		private void Start()
@@ -54,6 +56,7 @@ namespace Starter.Platformer
 
 			_input.Jump |= Input.GetButtonDown("Jump");
 			_input.Sprint |= Input.GetButton("Sprint");
+			_input.Interact |= Input.GetKeyDown(KeyCode.E);
 		}
 
 		private Vector2 ClampLookRotation(Vector2 lookRotation)

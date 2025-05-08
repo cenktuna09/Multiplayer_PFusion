@@ -15,6 +15,7 @@ namespace Starter
 		[Header("Start Game Setup")]
 		[Tooltip("Specifies which game mode player should join - e.g. Platformer, ThirdPersonCharacter")]
 		public string GameModeIdentifier;
+		//NetworkRunner: Manages the network session (creating, joining, shutting down).// Cenk
 		public NetworkRunner RunnerPrefab;
 		public int MaxPlayerCount = 8;
 
@@ -33,6 +34,9 @@ namespace Starter
 		private NetworkRunner _runnerInstance;
 		private static string _shutdownStatus;
 
+		/// <summary>
+		/// Starts the game, connects to the network, and updates the UI
+		/// </summary>
 		public async void StartGame()
 		{
 			await Disconnect();
@@ -41,7 +45,8 @@ namespace Starter
 
 			_runnerInstance = Instantiate(RunnerPrefab);
 
-			// Add listener for shutdowns so we can handle unexpected shutdowns
+			
+			// Used to listen for network-related events like shutdowns. // Cenk
 			var events = _runnerInstance.GetComponent<NetworkEvents>();
 			events.OnShutdown.AddListener(OnShutdown);
 
@@ -75,11 +80,17 @@ namespace Starter
 			}
 		}
 
+		/// <summary>
+		/// Disconnects from the network session
+		/// </summary>
 		public async void DisconnectClicked()
 		{
 			await Disconnect();
 		}
 
+		/// <summary>
+		/// Returns to the main menu (scene 0)
+		/// </summary>
 		public async void BackToMenu()
 		{
 			await Disconnect();
@@ -87,6 +98,9 @@ namespace Starter
 			SceneManager.LoadScene(0);
 		}
 
+		/// <summary>
+		/// Shows or hides the menu panel
+		/// </summary>
 		public void TogglePanelVisibility()
 		{
 			if (PanelGroup.gameObject.activeSelf && _runnerInstance == null)
@@ -95,6 +109,9 @@ namespace Starter
 			PanelGroup.gameObject.SetActive(!PanelGroup.gameObject.activeSelf);
 		}
 
+		/// <summary>
+		/// Initializes the menu with the player's nickname and previous shutdown status
+		/// </summary>
 		private void OnEnable()
 		{
 			var nickname = PlayerPrefs.GetString("PlayerName");
@@ -110,6 +127,9 @@ namespace Starter
 			_shutdownStatus = null;
 		}
 
+		/// <summary>
+		/// Handles input for showing/hiding the menu and updates UI/cursor state
+		/// </summary>
 		private void Update()
 		{
 			// Enter/Esc key is used for locking/unlocking cursor in game view.
@@ -135,6 +155,9 @@ namespace Starter
 			}
 		}
 
+		/// <summary>
+		/// Disconnects from the network and reloads the scene
+		/// </summary>
 		public async Task Disconnect()
 		{
 			if (_runnerInstance == null)
@@ -154,6 +177,9 @@ namespace Starter
 			SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
 		}
 
+		/// <summary>
+		/// Handles unexpected network shutdowns and reloads the scene
+		/// </summary>
 		private void OnShutdown(NetworkRunner runner, ShutdownReason reason)
 		{
 			// Unexpected shutdown happened (e.g. Host disconnected)

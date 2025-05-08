@@ -14,11 +14,14 @@ namespace Starter.Platformer
 	{
 		[Header("Setup")]
 		public float FallDelay = 0.2f;
-		public float ReactivationDelay = 1f;
+		public float ReactivationDelay = 2f;
 
 		[Header("References")]
 		public Collider Collider;
 		public Rigidbody Platform;
+
+		// KeyShapes that will fall with this platform
+		public KeyShape[] KeyShapes;
 
 		[Header("Audio")]
 		public AudioClip FallAudioClip;
@@ -84,6 +87,15 @@ namespace Starter.Platformer
 			{
 				AudioSource.PlayClipAtPoint(FallAudioClip, transform.position, FallAudioVolume);
 				Platform.AddForce(Vector3.down * 30f, ForceMode.Impulse);
+				
+				// Make all KeyShapes fall
+				foreach (var keyShape in KeyShapes)
+				{
+					if (keyShape != null && !keyShape.IsPickedUp)
+					{
+						keyShape.StartFalling();
+					}
+				}
 			}
 		}
 

@@ -31,6 +31,12 @@ namespace Starter.Platformer
 		public float GroundDeceleration = 25f;
 		public float AirAcceleration = 25f;
 		public float AirDeceleration = 1.3f;
+		
+		[Header("KeyShape Interaction")]
+		public float InteractionDistance = 2.0f;
+		public Transform KeyShapeSlot;
+		public AudioClip KeyShapePickupSound;
+		public float KeyShapePickupVolume = 0.5f;
 
 		[Header("Sounds")]
 		public AudioSource FootstepSound;
@@ -45,10 +51,13 @@ namespace Starter.Platformer
 		public string Nickname { get; set; }
 		[Networked, HideInInspector, OnChangedRender(nameof(OnCollectedCoinsChanged))]
 		public int CollectedCoins { get; set; }
+		
+		[Networked]
+		public KeyShape HeldKeyShape { get; set; }
 
 		[Networked, OnChangedRender(nameof(OnJumpingChanged))]
 		private NetworkBool _isJumping { get; set; }
-
+		
 		// Animation IDs
 		private int _animIDSpeed;
 		private int _animIDGrounded;
@@ -68,6 +77,43 @@ namespace Starter.Platformer
 			{
 				CollectedCoins = 0;
 			}
+			
+			// Drop any held key shape when respawning
+			DropKeyShape();
+		}
+		
+		// Method to attempt picking up a KeyShape
+		public void TryPickupKeyShape()
+		{
+			if (!HasStateAuthority || HeldKeyShape != null)
+				return;
+				
+			// Cast a ray to find interactable KeyShapes
+			Ray interactionRay = new Ray(CameraPivot.position, CameraPivot.forward);
+			if (Physics.Raycast(interactionRay, out RaycastHit hit, InteractionDistance))
+			{
+				KeyShape keyShape = hit.collider.GetComponent<KeyShape>();
+				if (keyShape != null && !keyShape.IsPickedUp)
+				{
+					HeldKeyShape = keyShape;
+					keyShape.PickUp(Object.InputAuthority);
+					
+					if (KeyShapePickupSound != null)
+					{
+						AudioSource.PlayClipAtPoint(KeyShapePickupSound, transform.position, KeyShapePickupVolume);
+					}
+				}
+			}
+		}
+		
+		// Method to drop a held KeyShape
+		public void DropKeyShape()
+		{
+			if (!HasStateAuthority || HeldKeyShape == null)
+				return;
+				
+			HeldKeyShape.Drop();
+			HeldKeyShape = null;
 		}
 
 		public override void Spawned()
@@ -153,6 +199,19 @@ namespace Starter.Platformer
 				// Set world space jump vector
 				jumpImpulse = JumpImpulse;
 				_isJumping = true;
+			}
+			
+			// Handle KeyShape pickup/drop
+			if (input.Interact)
+			{
+				if (HeldKeyShape == null)
+				{
+					TryPickupKeyShape();
+				}
+				else
+				{
+					DropKeyShape();
+				}
 			}
 
 			// It feels better when the player falls quicker
