@@ -19,6 +19,8 @@ GameObject:
   - component: {fileID: 4201450528657287374}
   - component: {fileID: 2269348888532662020}
   - component: {fileID: 8543394491624098239}
+  - component: {fileID: 5516951755107139536}
+  - component: {fileID: 8060095608060916475}
   m_Layer: 0
   m_Name: PlayerCharacter
   m_TagString: Untagged
@@ -136,6 +138,7 @@ MonoBehaviour:
   - {fileID: 4201450528657287374}
   - {fileID: 2269348888532662020}
   - {fileID: 8543394491624098239}
+  - {fileID: 5516951755107139536}
   ForceRemoteRenderTimeframe: 0
 --- !u!143 &740723189642138339
 CharacterController:
@@ -239,3 +242,37 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   Damage: 10
   PlayerMovement: {fileID: 1853543923097342628}
+--- !u!114 &5516951755107139536
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1822552028753169644}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 54506b260b832a0499e9e54c859e3723, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _Index: 0
+  _Nickname:
+    _length: 3
+    _data:
+      Data: 620000006a0000006b00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+  <Controller>k__BackingField: {fileID: 1853543923097342628}
+--- !u!114 &8060095608060916475
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1822552028753169644}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5b0adcdd8c325d5459431a51658d5e56, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  anim: {fileID: 0}
+  modelParts: []
+  uiPoint: {fileID: 0}
+  animationBlending: 5
