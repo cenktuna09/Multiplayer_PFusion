@@ -1,65 +1,157 @@
 using Fusion;
+using Fusion.Addons.SimpleKCC;
+using Helpers.Bits;
+using Helpers.Physics;
+using System;
+using System.Collections.Generic;
 using UnityEngine;
 
+/// <summary>
+/// Handles the movement of player
+/// </summary>
 public class PlayerMovement : NetworkBehaviour
 {
-    public Camera Camera;
+	/// <summary>
+	/// Reference to the local player
+	/// </summary>
+	public static PlayerMovement Local { get; protected set; }
 
-    private Vector3 _velocity;
-    private bool _jumpPressed;
+	[Tooltip("The rate at which the player looks when rotating")]
+	public float lookTurnRate = 1.5f;
 
-    private CharacterController _controller;
+	private List<PlayerObject> nearbyPlayers = new List<PlayerObject>(10);
 
-    public float PlayerSpeed = 2f;
+	int _playerRadiusLayer;
 
-    public float JumpForce = 5f;
-    public float GravityValue = -9.81f;
+	public KCC cc { get; protected set; }
+	public SimpleKCC simpleCC { get; protected set; }
 
-public override void Spawned()
-{
-    if (HasStateAuthority)
+	public bool TransformLocal = false;
+
+	[Networked]
+	public float Speed { get; set; } = 6f;
+
+	/// <summary>
+	/// The list of lag compenstated hits.
+	/// </summary>
+	List<LagCompensatedHit> lagCompensatedHits = new List<LagCompensatedHit>();
+
+	/// <summary>
+	/// The current player data.
+	/// </summary>
+    PlayerData playerData;
+
+	// This will prevent players from killing and calling a meeting at the same time.
+	private bool actionPerformed = false;
+
+	private void Awake()
     {
-        Camera = Camera.main;
-        Camera.GetComponent<FirstPersonCamera>().Target = transform;
-    }
-}
-    private void Awake()
-    {
-        _controller = GetComponent<CharacterController>();
-    }
+		_playerRadiusLayer = LayerMask.NameToLayer("PlayerRadius");
+		playerData = GetComponent<PlayerData>();
+	}
 
-    void Update()
-    {
-        if (Input.GetButtonDown("Jump"))
-        {
-            _jumpPressed = true;
-        }
-    }
+	public override void Spawned()
+	{
+		if (HasInputAuthority)
+		{
+			Local = this;
+		}
 
-    public override void FixedUpdateNetwork()
-    {
-        // FixedUpdateNetwork is only executed on the StateAuthority
+		cc = GetComponent<KCC>();
+		simpleCC = cc as SimpleKCC;
 
-        if (_controller.isGrounded)
-        {
-            _velocity = new Vector3(0, -1, 0);
-        }
+		if (HasStateAuthority)
+		{
+			//GameSettings settings = GameManager.Instance.Settings;
 
-        Quaternion cameraRotationY = Quaternion.Euler(0, Camera.transform.rotation.eulerAngles.y, 0);
-        Vector3 move = cameraRotationY * new Vector3(Input.GetAxis("Horizontal"), 0, Input.GetAxis("Vertical")) * Runner.DeltaTime * PlayerSpeed;
-        
-        _velocity.y += GravityValue * Runner.DeltaTime;
-        if (_jumpPressed && _controller.isGrounded)
-        {
-            _velocity.y += JumpForce;
-        }
-        _controller.Move(move + _velocity * Runner.DeltaTime);
+			int playerLayer = LayerMask.NameToLayer("Player");
+			cc.SetColliderLayer(LayerMask.NameToLayer("Player"));
+			//cc.SetCollisionLayerMask(cc.Settings.CollisionLayerMask.value.OverrideBit(playerLayer, settings.playerCollision));
+			//Speed = settings.walkSpeed;
+		}
+	}
 
-        if (move != Vector3.zero)
-        {
-            gameObject.transform.forward = move;
-        }
+	public override void Render()
+	{
+		//playerData.UpdateAnimation(this);
+	}
 
-        _jumpPressed = false;
-    }
+	public override void FixedUpdateNetwork()
+	{
+		bool hasInput = GetInput(out PlayerInput input);
+
+		if (hasInput && input.IsDown(PlayerInputBehaviour.BUTTON_START_GAME))
+		{
+			//GameManager.Instance.Server_StartGame();
+		}
+
+		Vector3 direction = default;
+		bool canMoveOrUseInteractables = hasInput;
+
+		if (canMoveOrUseInteractables)
+		{
+			// BUTTON_WALK is representing left mouse button
+			if (input.IsDown(PlayerInputBehaviour.BUTTON_WALK))
+			{
+				direction = new Vector3(
+					Mathf.Cos((float)input.Yaw * Mathf.Deg2Rad),
+					0,
+					Mathf.Sin((float)input.Yaw * Mathf.Deg2Rad)
+				);
+			}
+			else
+			{
+				if (input.IsDown(PlayerInputBehaviour.BUTTON_FORWARD))
+				{
+					direction += TransformLocal ? transform.forward : Vector3.forward;
+				}
+
+				if (input.IsDown(PlayerInputBehaviour.BUTTON_BACKWARD))
+				{
+					direction -= TransformLocal ? transform.forward : Vector3.forward;
+				}
+
+				if (input.IsDown(PlayerInputBehaviour.BUTTON_LEFT))
+				{
+					direction -= TransformLocal ? transform.right : Vector3.right;
+				}
+
+				if (input.IsDown(PlayerInputBehaviour.BUTTON_RIGHT))
+				{
+					direction += TransformLocal ? transform.right : Vector3.right;
+				}
+
+				direction = direction.normalized;
+			}
+		}
+
+		simpleCC.Move(direction * Speed);
+
+		if (direction != Vector3.zero)
+		{
+			Quaternion targetQ = Quaternion.AngleAxis(Mathf.Atan2(direction.z, direction.x) * Mathf.Rad2Deg - 90, Vector3.down);
+			cc.SetLookRotation(Quaternion.RotateTowards(transform.rotation, targetQ, lookTurnRate * 360 * Runner.DeltaTime));
+		}
+
+
+		// The lists of nearby players and interactables are cleared with every check.
+		//nearbyInteractables.Clear();
+		nearbyPlayers.Clear();
+
+
+		if (HasInputAuthority)
+		{
+			//GameManager.im.gameUI.reportButton.interactable = canReport;
+			//GameManager.im.gameUI.killButton.interactable = canKill;
+			//GameManager.im.gameUI.useButton.interactable = canUse;
+		}
+
+
+		if (!canMoveOrUseInteractables)
+			return;
+
+		actionPerformed = false;
+	}
+	
+	
 }
