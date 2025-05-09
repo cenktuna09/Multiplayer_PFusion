@@ -108,7 +108,7 @@ namespace Starter.Platformer
                 if (IsUnlocked)
                 {
                     // Remove key from player if unlocking was successful
-                    player.HeldKeyShape.Drop();
+                    player.HeldKeyShape.RequestDrop();
                     player.HeldKeyShape = null;
                 }
             }

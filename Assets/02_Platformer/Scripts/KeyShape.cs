@@ -15,6 +15,13 @@ namespace Starter.Platformer
         [Networked]
         public PlayerRef PickedUpBy { get; set; }
         
+        // Network position for more accurate synchronization
+        [Networked]
+        private Vector3 NetworkPosition { get; set; }
+        
+        [Networked]
+        private Quaternion NetworkRotation { get; set; }
+        
         public Rigidbody Rigidbody;
         public Collider ShapeCollider;
         
@@ -69,6 +76,10 @@ namespace Starter.Platformer
             // Update visual based on assigned type
             UpdateVisuals();
             
+            // Initialize network position
+            NetworkPosition = transform.position;
+            NetworkRotation = transform.rotation;
+            
             // Mark as fully spawned to allow networked property access
             _isFullySpawned = true;
         }
@@ -98,10 +109,22 @@ namespace Starter.Platformer
             Debug.Log($"KeyShape {gameObject.name} started falling. PickupTrigger enabled: {PickupTrigger.enabled}");
         }
         
-        // Handle player picking up the shape
-        public void PickUp(PlayerRef player)
+        // Request pickup via RPC - call this from the client
+        public void RequestPickup(PlayerRef player)
         {
-            if (HasStateAuthority)
+            if (Object && Object.IsValid && !IsPickedUp)
+            {
+                Debug.Log($"Player {player} requesting pickup of {gameObject.name}");
+                RPC_PickUp(player);
+            }
+        }
+        
+        // Handle player picking up the shape
+        [Rpc(RpcSources.All, RpcTargets.StateAuthority)]
+        public void RPC_PickUp(PlayerRef player)
+        {
+            Debug.Log($"RPC_PickUp called for player {player} on {gameObject.name}");
+            if (Object && Object.IsValid && !IsPickedUp)
             {
                 IsPickedUp = true;
                 PickedUpBy = player;
@@ -117,10 +140,22 @@ namespace Starter.Platformer
             }
         }
         
-        // Handle player dropping the shape
-        public void Drop()
+        // Request drop via RPC - call this from the client
+        public void RequestDrop()
         {
-            if (HasStateAuthority)
+            if (Object && Object.IsValid && IsPickedUp)
+            {
+                Debug.Log($"Player {PickedUpBy} requesting drop of {gameObject.name}");
+                RPC_Drop();
+            }
+        }
+        
+        // Handle player dropping the shape
+        [Rpc(RpcSources.All, RpcTargets.StateAuthority)]
+        public void RPC_Drop()
+        {
+            Debug.Log($"RPC_Drop called for {gameObject.name}");
+            if (Object && Object.IsValid && IsPickedUp)
             {
                 IsPickedUp = false;
                 PickedUpBy = default;
@@ -148,14 +183,34 @@ namespace Starter.Platformer
                         // Keep the same height as the player plus offset
                         holdPosition.y = player.transform.position.y + _heldYOffset;
 
+                        // Update networked position/rotation for sync
+                        NetworkPosition = holdPosition;
+                        NetworkRotation = player.transform.rotation;
+                        
                         // Smoothly move the shape to the hold position
                         transform.position = Vector3.Lerp(transform.position, holdPosition, Runner.DeltaTime * 10f);
                         
                         // Make the shape face the same direction as the player
                         transform.rotation = Quaternion.Slerp(transform.rotation, player.transform.rotation, Runner.DeltaTime * 8f);
-                        
                     }
                 }
+            }
+            else if (!Rigidbody.isKinematic)
+            {
+                // Update network position from physics position
+                NetworkPosition = transform.position;
+                NetworkRotation = transform.rotation;
+            }
+        }
+        
+        // Interpolate position on render for smooth movement
+        public override void Render()
+        {
+            if (IsPickedUp)
+            {
+                // Smoothly interpolate to network position for visual consistency
+                transform.position = Vector3.Lerp(transform.position, NetworkPosition, Time.deltaTime * 15f);
+                transform.rotation = Quaternion.Slerp(transform.rotation, NetworkRotation, Time.deltaTime * 15f);
             }
         }
         

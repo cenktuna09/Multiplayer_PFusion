@@ -153,7 +153,7 @@ namespace Starter.Platformer
 			{
 				Debug.Log($"Picking up KeyShape {closestKeyShape.gameObject.name}");
 				HeldKeyShape = closestKeyShape;
-				closestKeyShape.PickUp(Object.InputAuthority);
+				closestKeyShape.RequestPickup(Object.InputAuthority);
 				
 				if (KeyShapePickupSound != null)
 				{
@@ -182,7 +182,7 @@ namespace Starter.Platformer
 			}
 			
 			Debug.Log($"Dropping KeyShape {HeldKeyShape.gameObject.name}");
-			HeldKeyShape.Drop();
+			HeldKeyShape.RequestDrop();
 			HeldKeyShape = null;
 		}
 
