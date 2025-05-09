@@ -522,6 +522,131 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 1519084213871303785, guid: d4f68d635a92ba44e88fb07bb116b223, type: 3}
   m_PrefabInstance: {fileID: 982284553}
   m_PrefabAsset: {fileID: 0}
+--- !u!1001 &163811264
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 619333602}
+    m_Modifications:
+    - target: {fileID: 323740202016531948, guid: e3a74b77680a4554dbf60bbd03ab5c8d, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: -2.91
+      objectReference: {fileID: 0}
+    - target: {fileID: 323740202016531948, guid: e3a74b77680a4554dbf60bbd03ab5c8d, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 7.656
+      objectReference: {fileID: 0}
+    - target: {fileID: 323740202016531948, guid: e3a74b77680a4554dbf60bbd03ab5c8d, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 10.58
+      objectReference: {fileID: 0}
+    - target: {fileID: 323740202016531948, guid: e3a74b77680a4554dbf60bbd03ab5c8d, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 0.40531656
+      objectReference: {fileID: 0}
+    - target: {fileID: 323740202016531948, guid: e3a74b77680a4554dbf60bbd03ab5c8d, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0.6733643
+      objectReference: {fileID: 0}
+    - target: {fileID: 323740202016531948, guid: e3a74b77680a4554dbf60bbd03ab5c8d, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: -0.58773255
+      objectReference: {fileID: 0}
+    - target: {fileID: 323740202016531948, guid: e3a74b77680a4554dbf60bbd03ab5c8d, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0.1920143
+      objectReference: {fileID: 0}
+    - target: {fileID: 323740202016531948, guid: e3a74b77680a4554dbf60bbd03ab5c8d, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 50.494
+      objectReference: {fileID: 0}
+    - target: {fileID: 323740202016531948, guid: e3a74b77680a4554dbf60bbd03ab5c8d, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: -159.975
+      objectReference: {fileID: 0}
+    - target: {fileID: 323740202016531948, guid: e3a74b77680a4554dbf60bbd03ab5c8d, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: -88.25
+      objectReference: {fileID: 0}
+    - target: {fileID: 3175947525907929463, guid: e3a74b77680a4554dbf60bbd03ab5c8d, type: 3}
+      propertyPath: m_IsKinematic
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 8048021861965253828, guid: e3a74b77680a4554dbf60bbd03ab5c8d, type: 3}
+      propertyPath: m_Name
+      value: RigidbodyTriangle (3)
+      objectReference: {fileID: 0}
+    - target: {fileID: 8170073866616630881, guid: e3a74b77680a4554dbf60bbd03ab5c8d, type: 3}
+      propertyPath: SortKey
+      value: 470635095
+      objectReference: {fileID: 0}
+    - target: {fileID: 8170073866616630881, guid: e3a74b77680a4554dbf60bbd03ab5c8d, type: 3}
+      propertyPath: NetworkedBehaviours.Array.size
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 8170073866616630881, guid: e3a74b77680a4554dbf60bbd03ab5c8d, type: 3}
+      propertyPath: NetworkedBehaviours.Array.data[0]
+      value: 
+      objectReference: {fileID: 163811270}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 8048021861965253828, guid: e3a74b77680a4554dbf60bbd03ab5c8d, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 163811270}
+  m_SourcePrefab: {fileID: 100100000, guid: e3a74b77680a4554dbf60bbd03ab5c8d, type: 3}
+--- !u!4 &163811265 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 323740202016531948, guid: e3a74b77680a4554dbf60bbd03ab5c8d, type: 3}
+  m_PrefabInstance: {fileID: 163811264}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1 &163811266 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 4471240036840911760, guid: e3a74b77680a4554dbf60bbd03ab5c8d, type: 3}
+  m_PrefabInstance: {fileID: 163811264}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1 &163811267 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 8048021861965253828, guid: e3a74b77680a4554dbf60bbd03ab5c8d, type: 3}
+  m_PrefabInstance: {fileID: 163811264}
+  m_PrefabAsset: {fileID: 0}
+--- !u!54 &163811268 stripped
+Rigidbody:
+  m_CorrespondingSourceObject: {fileID: 3175947525907929463, guid: e3a74b77680a4554dbf60bbd03ab5c8d, type: 3}
+  m_PrefabInstance: {fileID: 163811264}
+  m_PrefabAsset: {fileID: 0}
+--- !u!65 &163811269 stripped
+BoxCollider:
+  m_CorrespondingSourceObject: {fileID: 7338178321416188190, guid: e3a74b77680a4554dbf60bbd03ab5c8d, type: 3}
+  m_PrefabInstance: {fileID: 163811264}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &163811270
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 163811267}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 603a4d8ae12a1c14ab9697fbdd33ce97, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _Type: 1
+  _IsPickedUp:
+    _value: 0
+  Rigidbody: {fileID: 163811268}
+  ShapeCollider: {fileID: 163811269}
+  PickupTrigger: {fileID: 0}
+  PickupTriggerRadius: 1.5
+  TriangleVisual: {fileID: 163811266}
+  SquareVisual: {fileID: 163811266}
+  RectangleVisual: {fileID: 0}
+  PickupSound: {fileID: 8300000, guid: dc86f3bef8384e145b23fba67a4f02ad, type: 3}
+  PickupSoundVolume: 0.5
 --- !u!4 &177934683 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 1519084213871303785, guid: d4f68d635a92ba44e88fb07bb116b223, type: 3}
@@ -1405,6 +1530,7 @@ Transform:
   - {fileID: 1725491498}
   - {fileID: 1871790150}
   - {fileID: 710863134}
+  - {fileID: 163811265}
   - {fileID: 664941676}
   - {fileID: 1759915813}
   m_Father: {fileID: 1327619677}
@@ -4151,6 +4277,10 @@ PrefabInstance:
       propertyPath: KeyShapes.Array.data[0]
       value: 
       objectReference: {fileID: 710863138}
+    - target: {fileID: 763210378690773948, guid: c66f591052df31c428365d230d18e102, type: 3}
+      propertyPath: KeyShapes.Array.data[1]
+      value: 
+      objectReference: {fileID: 163811270}
     - target: {fileID: 763210378690773948, guid: c66f591052df31c428365d230d18e102, type: 3}
       propertyPath: ShapeRigidbodies.Array.size
       value: 3

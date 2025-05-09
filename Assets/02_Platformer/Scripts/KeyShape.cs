@@ -142,10 +142,18 @@ namespace Starter.Platformer
                     Player player = playerObject.GetComponent<Player>();
                     if (player != null)
                     {
-                        // Position the shape in front of the player
-                        Vector3 holdPosition = player.transform.position + player.transform.forward * 1.0f;
+                        // Position the shape 5 units in front of the player
+                        Vector3 holdPosition = player.transform.position + new Vector3(0, 0, 5.0f);
+                        
+                        // Keep the same height as the player plus offset
                         holdPosition.y = player.transform.position.y + _heldYOffset;
-                        transform.position = holdPosition;
+
+                        // Smoothly move the shape to the hold position
+                        transform.position = Vector3.Lerp(transform.position, holdPosition, Runner.DeltaTime * 10f);
+                        
+                        // Make the shape face the same direction as the player
+                        transform.rotation = Quaternion.Slerp(transform.rotation, player.transform.rotation, Runner.DeltaTime * 8f);
+                        
                     }
                 }
             }
