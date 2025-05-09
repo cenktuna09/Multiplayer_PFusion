@@ -18,6 +18,10 @@ namespace Starter.Platformer
         public Rigidbody Rigidbody;
         public Collider ShapeCollider;
         
+        // Trigger collider for easier pickup
+        public SphereCollider PickupTrigger;
+        public float PickupTriggerRadius = 3.5f;
+        
         // Visual representation to make shape type visible
         public GameObject TriangleVisual;
         public GameObject SquareVisual;
@@ -29,6 +33,12 @@ namespace Starter.Platformer
         
         // Original Y position above ground for when held by player
         private float _heldYOffset = 1.5f;
+
+        // Player currently in pickup range
+        private Player _playerInRange;
+        
+        // Spawned flag to check if networked properties can be accessed
+        private bool _isFullySpawned = false;
         
         public override void Spawned()
         {
@@ -39,9 +49,28 @@ namespace Starter.Platformer
             // Ensure collider reference is set
             if (ShapeCollider == null)
                 ShapeCollider = GetComponent<Collider>();
+            
+            // Setup pickup trigger if not assigned
+            if (PickupTrigger == null)
+            {
+                Debug.Log($"Creating PickupTrigger for {gameObject.name}");
+                PickupTrigger = gameObject.AddComponent<SphereCollider>();
+                PickupTrigger.radius = PickupTriggerRadius;
+                PickupTrigger.isTrigger = true;
+            }
+            
+            // Increase radius to make pickup easier
+            PickupTrigger.radius = 2.5f; // Increased from default value
+            
+            // Disable pickup trigger until the shape falls
+            PickupTrigger.enabled = false;
+            Debug.Log($"KeyShape {gameObject.name} spawned. PickupTrigger enabled: {PickupTrigger.enabled}");
                 
             // Update visual based on assigned type
             UpdateVisuals();
+            
+            // Mark as fully spawned to allow networked property access
+            _isFullySpawned = true;
         }
         
         // Set the shape type and update visuals
@@ -63,6 +92,10 @@ namespace Starter.Platformer
         public void StartFalling()
         {
             Rigidbody.isKinematic = false;
+            
+            // Enable pickup trigger when the shape falls
+            PickupTrigger.enabled = true;
+            Debug.Log($"KeyShape {gameObject.name} started falling. PickupTrigger enabled: {PickupTrigger.enabled}");
         }
         
         // Handle player picking up the shape
@@ -74,6 +107,9 @@ namespace Starter.Platformer
                 PickedUpBy = player;
                 Rigidbody.isKinematic = true;
                 ShapeCollider.enabled = false;
+                
+                // Disable pickup trigger
+                PickupTrigger.enabled = false;
                 
                 // Play pickup sound
                 if (PickupSound != null)
@@ -90,6 +126,9 @@ namespace Starter.Platformer
                 PickedUpBy = default;
                 Rigidbody.isKinematic = false;
                 ShapeCollider.enabled = true;
+                
+                // Re-enable pickup trigger
+                PickupTrigger.enabled = true;
             }
         }
         
@@ -110,6 +149,75 @@ namespace Starter.Platformer
                     }
                 }
             }
+        }
+        
+        // Register player entering pickup range
+        private void OnTriggerEnter(Collider other)
+        {
+            Debug.Log($"OnTriggerEnter: {other.gameObject.name} entered trigger of {gameObject.name}");
+            
+            // Safety check to prevent accessing networked properties before spawn
+            if (!_isFullySpawned || !Object || !Object.IsValid)
+            {
+                Debug.LogWarning($"KeyShape {gameObject.name} not fully spawned or Object not valid");
+                return;
+            }
+                
+            // Now it's safe to check IsPickedUp
+            if (Object.IsValid && IsPickedUp)
+            {
+                Debug.Log($"KeyShape {gameObject.name} is already picked up");
+                return;
+            }
+
+            // Check if the collider belongs to a SimpleKCC
+            var kcc = other.GetComponent<Fusion.Addons.SimpleKCC.SimpleKCC>();
+            if (kcc != null)
+            {
+                // Get the Player component from the KCC's gameObject
+                Player player = kcc.gameObject.GetComponent<Player>();
+                if (player != null)
+                {
+                    Debug.Log($"Setting player {player.gameObject.name} as in range for {gameObject.name} (via KCC)");
+                    _playerInRange = player;
+                }
+            }
+        }
+        
+        // Unregister player leaving pickup range
+        private void OnTriggerExit(Collider other)
+        {
+            Debug.Log($"OnTriggerExit: {other.gameObject.name} exited trigger of {gameObject.name}");
+            
+            // Safety check 
+            if (!_isFullySpawned || !Object || !Object.IsValid)
+                return;
+                
+            // Check if the collider belongs to a SimpleKCC
+            var kcc = other.GetComponent<Fusion.Addons.SimpleKCC.SimpleKCC>();
+            if (kcc != null)
+            {
+                // Get the Player component from the KCC's gameObject
+                Player player = kcc.gameObject.GetComponent<Player>();
+                if (player != null && player == _playerInRange)
+                {
+                    Debug.Log($"Clearing player {player.gameObject.name} from range of {gameObject.name} (via KCC)");
+                    _playerInRange = null;
+                }
+            }
+        }
+        
+        // Get the player in range, if any
+        public Player GetPlayerInRange()
+        {
+            // Only return player if we're fully spawned
+            if (!_isFullySpawned || !Object || !Object.IsValid)
+            {
+                Debug.LogWarning($"GetPlayerInRange called on {gameObject.name} but not fully spawned or Object not valid");
+                return null;
+            }
+                
+            return _playerInRange;
         }
     }
 } 

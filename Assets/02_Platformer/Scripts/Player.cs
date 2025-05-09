@@ -1,6 +1,7 @@
 ﻿using UnityEngine;
 using Fusion;
 using Fusion.Addons.SimpleKCC;
+using System.Collections.Generic;
 
 namespace Starter.Platformer
 {
@@ -85,33 +86,102 @@ namespace Starter.Platformer
 		// Method to attempt picking up a KeyShape
 		public void TryPickupKeyShape()
 		{
-			if (!HasStateAuthority || HeldKeyShape != null)
-				return;
-				
-			// Cast a ray to find interactable KeyShapes
-			Ray interactionRay = new Ray(CameraPivot.position, CameraPivot.forward);
-			if (Physics.Raycast(interactionRay, out RaycastHit hit, InteractionDistance))
+			if (!HasStateAuthority)
 			{
-				KeyShape keyShape = hit.collider.GetComponent<KeyShape>();
-				if (keyShape != null && !keyShape.IsPickedUp)
+				Debug.Log("TryPickupKeyShape: Player does not have state authority");
+				return;
+			}
+			
+			if (HeldKeyShape != null)
+			{
+				Debug.Log("TryPickupKeyShape: Player already has a KeyShape");
+				return;
+			}
+			
+			Debug.Log("TryPickupKeyShape: Searching for nearby KeyShapes");
+			
+			// Find all key shapes in the scene
+			KeyShape[] allKeyShapes = FindObjectsOfType<KeyShape>();
+			Debug.Log($"Found {allKeyShapes.Length} KeyShapes in scene");
+			
+			KeyShape closestKeyShape = null;
+			float closestDistance = float.MaxValue;
+			
+			// Find closest key shape that has player in range
+			foreach (KeyShape keyShape in allKeyShapes)
+			{
+				// Ensure the keyShape is valid and networked before accessing networked properties
+				if (keyShape == null)
 				{
-					HeldKeyShape = keyShape;
-					keyShape.PickUp(Object.InputAuthority);
+					Debug.LogWarning("Skipping null KeyShape");
+					continue;
+				}
+				
+				if (keyShape.Object == null || !keyShape.Object.IsValid)
+				{
+					Debug.LogWarning($"Skipping KeyShape {keyShape.gameObject.name} - Object is null or invalid");
+					continue;
+				}
+				
+				// Check if we're in range of this key shape's trigger
+				float distance = Vector3.Distance(transform.position, keyShape.transform.position);
+				bool isInRange = distance <= keyShape.PickupTrigger.radius * 1.5f; // Add some buffer to the radius
+				bool isPickedUp = keyShape.IsPickedUp;
+				
+				Debug.Log($"Checking KeyShape {keyShape.gameObject.name}: " +
+						 $"distance={distance}, " +
+						 $"radius={keyShape.PickupTrigger.radius}, " +
+						 $"isInRange={isInRange}, " +
+						 $"isPickedUp={isPickedUp}");
+				
+				if (isInRange && !isPickedUp)
+				{
+					// We're in range of this key shape
+					Debug.Log($"In range of KeyShape {keyShape.gameObject.name} at distance {distance}");
 					
-					if (KeyShapePickupSound != null)
+					if (closestKeyShape == null || distance < closestDistance)
 					{
-						AudioSource.PlayClipAtPoint(KeyShapePickupSound, transform.position, KeyShapePickupVolume);
+						closestKeyShape = keyShape;
+						closestDistance = distance;
+						Debug.Log($"KeyShape {keyShape.gameObject.name} is now the closest at {distance}");
 					}
 				}
+			}
+			
+			// If we found a key shape in range, pick it up
+			if (closestKeyShape != null)
+			{
+				Debug.Log($"Picking up KeyShape {closestKeyShape.gameObject.name}");
+				HeldKeyShape = closestKeyShape;
+				closestKeyShape.PickUp(Object.InputAuthority);
+				
+				if (KeyShapePickupSound != null)
+				{
+					AudioSource.PlayClipAtPoint(KeyShapePickupSound, transform.position, KeyShapePickupVolume);
+				}
+			}
+			else
+			{
+				Debug.Log("No KeyShape in range to pick up");
 			}
 		}
 		
 		// Method to drop a held KeyShape
 		public void DropKeyShape()
 		{
-			if (!HasStateAuthority || HeldKeyShape == null)
+			if (!HasStateAuthority)
+			{
+				Debug.Log("DropKeyShape: Player does not have state authority");
 				return;
+			}
 				
+			if (HeldKeyShape == null)
+			{
+				Debug.Log("DropKeyShape: No KeyShape to drop");
+				return;
+			}
+			
+			Debug.Log($"Dropping KeyShape {HeldKeyShape.gameObject.name}");
 			HeldKeyShape.Drop();
 			HeldKeyShape = null;
 		}
@@ -204,12 +274,15 @@ namespace Starter.Platformer
 			// Handle KeyShape pickup/drop
 			if (input.Interact)
 			{
+				Debug.Log("Interact button pressed");
 				if (HeldKeyShape == null)
 				{
+					Debug.Log("Trying to pick up a KeyShape");
 					TryPickupKeyShape();
 				}
 				else
 				{
+					Debug.Log("Trying to drop a KeyShape");
 					DropKeyShape();
 				}
 			}
