@@ -168,7 +168,7 @@ namespace Starter.Platformer
                 PickedUpBy = default;
                 Rigidbody.isKinematic = false;
                 
-                // Collider Trigger
+                // Collider Trigger 
                 ShapeCollider.isTrigger = false;
                 ShapeCollider.enabled = true;
                 
@@ -179,7 +179,6 @@ namespace Starter.Platformer
         
         public override void FixedUpdateNetwork()
         {
-
             // Safety check
             if (!Object || !Object.IsValid)
                 return;
@@ -204,8 +203,8 @@ namespace Starter.Platformer
                             // Update networked positions
                             NetworkPosition = holdPosition;
                             
-                            // Set actual position for state authority - no rotation updates
-                            transform.position = holdPosition;
+                            // Smoothly move to the desired position using Slerp
+                            transform.position = Vector3.Slerp(transform.position, holdPosition, Runner.DeltaTime * 20.0f);
                         }
                     }
                 }
@@ -223,8 +222,8 @@ namespace Starter.Platformer
             // Only non-state authority needs to update position in Render
             if (!HasStateAuthority && Object && Object.IsValid)
             {
-                // Direct position assignment without rotation updates
-                transform.position = NetworkPosition;
+                // Use Slerp for smooth movement
+                transform.position = Vector3.Slerp(transform.position, NetworkPosition, Time.deltaTime * 2.0f);
             }
         }
         
