@@ -19,9 +19,6 @@ namespace Starter.Platformer
         [Networked]
         private Vector3 NetworkPosition { get; set; }
         
-        [Networked]
-        private Quaternion NetworkRotation { get; set; }
-        
         public Rigidbody Rigidbody;
         public Collider ShapeCollider;
         
@@ -78,7 +75,6 @@ namespace Starter.Platformer
             
             // Initialize network position
             NetworkPosition = transform.position;
-            NetworkRotation = transform.rotation;
             
             // Mark as fully spawned to allow networked property access
             _isFullySpawned = true;
@@ -103,6 +99,9 @@ namespace Starter.Platformer
         public void StartFalling()
         {
             Rigidbody.isKinematic = false;
+            
+            // Apply downward force like FallingPlatform
+            Rigidbody.AddForce(Vector3.down * 20f, ForceMode.Impulse);
             
             // Enable pickup trigger when the shape falls
             PickupTrigger.enabled = true;
@@ -129,10 +128,18 @@ namespace Starter.Platformer
                 IsPickedUp = true;
                 PickedUpBy = player;
                 Rigidbody.isKinematic = true;
-                ShapeCollider.enabled = false;
+                
+                // Collider Trigger
+                ShapeCollider.isTrigger = true;
+                ShapeCollider.enabled = true;
                 
                 // Disable pickup trigger
                 PickupTrigger.enabled = false;
+                
+                // Random Up Force
+                float randomUpForce = Random.Range(5f, 10f);
+                transform.position += Vector3.up * 0.5f; 
+                Rigidbody.AddForce(Vector3.up * randomUpForce, ForceMode.Impulse);
                 
                 // Play pickup sound
                 if (PickupSound != null)
@@ -160,6 +167,9 @@ namespace Starter.Platformer
                 IsPickedUp = false;
                 PickedUpBy = default;
                 Rigidbody.isKinematic = false;
+                
+                // Collider Trigger
+                ShapeCollider.isTrigger = false;
                 ShapeCollider.enabled = true;
                 
                 // Re-enable pickup trigger
@@ -169,6 +179,11 @@ namespace Starter.Platformer
         
         public override void FixedUpdateNetwork()
         {
+
+            // Safety check
+            if (!Object || !Object.IsValid)
+                return;
+                
             // If picked up, follow the player
             if (IsPickedUp)
             {
@@ -177,40 +192,39 @@ namespace Starter.Platformer
                     Player player = playerObject.GetComponent<Player>();
                     if (player != null)
                     {
-                        // Position the shape 5 units in front of the player
-                        Vector3 holdPosition = player.transform.position + new Vector3(0, 0, 5.0f);
-                        
-                        // Keep the same height as the player plus offset
-                        holdPosition.y = player.transform.position.y + _heldYOffset;
-
-                        // Update networked position/rotation for sync
-                        NetworkPosition = holdPosition;
-                        NetworkRotation = player.transform.rotation;
-                        
-                        // Smoothly move the shape to the hold position
-                        transform.position = Vector3.Lerp(transform.position, holdPosition, Runner.DeltaTime * 10f);
-                        
-                        // Make the shape face the same direction as the player
-                        transform.rotation = Quaternion.Slerp(transform.rotation, player.transform.rotation, Runner.DeltaTime * 8f);
+                        // Only state authority should update the network position
+                        if (HasStateAuthority)
+                        {
+                            // Position the shape in front of the player
+                            Vector3 holdPosition = player.transform.position;
+                            
+                            // Keep the same height as the player plus offset
+                            holdPosition.y = player.transform.position.y + 2.0f;
+    
+                            // Update networked positions
+                            NetworkPosition = holdPosition;
+                            
+                            // Set actual position for state authority - no rotation updates
+                            transform.position = holdPosition;
+                        }
                     }
                 }
             }
-            else if (!Rigidbody.isKinematic)
+            else if (HasStateAuthority && !Rigidbody.isKinematic)
             {
-                // Update network position from physics position
+                // Only state authority updates network position from physics
                 NetworkPosition = transform.position;
-                NetworkRotation = transform.rotation;
             }
         }
         
-        // Interpolate position on render for smooth movement
+        // Handle position updates for non-state authority clients
         public override void Render()
         {
-            if (IsPickedUp)
+            // Only non-state authority needs to update position in Render
+            if (!HasStateAuthority && Object && Object.IsValid)
             {
-                // Smoothly interpolate to network position for visual consistency
-                transform.position = Vector3.Lerp(transform.position, NetworkPosition, Time.deltaTime * 15f);
-                transform.rotation = Quaternion.Slerp(transform.rotation, NetworkRotation, Time.deltaTime * 15f);
+                // Direct position assignment without rotation updates
+                transform.position = NetworkPosition;
             }
         }
         
