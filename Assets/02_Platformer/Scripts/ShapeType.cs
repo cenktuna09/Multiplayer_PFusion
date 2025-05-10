@@ -5,6 +5,6 @@ namespace Starter.Platformer
     {
         Triangle,
         Square, 
-        Rectangle
+        Circle
     }
 } 

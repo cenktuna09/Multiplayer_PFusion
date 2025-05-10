@@ -1,5 +1,6 @@
 using Fusion;
 using UnityEngine;
+using TMPro;
 
 namespace Starter.Platformer
 {
@@ -35,6 +36,13 @@ namespace Starter.Platformer
         public AudioClip PickupSound;
         public float PickupSoundVolume = 0.5f;
         
+        // # UI Elements
+        [Header("UI")]
+        public Canvas WorldSpaceCanvas;
+        public TextMeshProUGUI InteractionText;
+        public string PickupPrompt = "Press E to Pickup";
+        public string DropPrompt = "Press E to Drop";
+        
         // Original Y position above ground for when held by player
         private float _heldYOffset = 1.5f;
 
@@ -69,6 +77,13 @@ namespace Starter.Platformer
             // Disable pickup trigger until the shape falls
             PickupTrigger.enabled = false;
             Debug.Log($"KeyShape {gameObject.name} spawned. PickupTrigger enabled: {PickupTrigger.enabled}");
+
+            // # Hide interaction text at start
+            if (InteractionText != null)
+            {
+                InteractionText.text = PickupPrompt;
+                InteractionText.gameObject.SetActive(false);
+            }
                 
             // Update visual based on assigned type
             UpdateVisuals();
@@ -92,7 +107,7 @@ namespace Starter.Platformer
         {
             if (TriangleVisual != null) TriangleVisual.SetActive(Type == ShapeType.Triangle);
             if (SquareVisual != null) SquareVisual.SetActive(Type == ShapeType.Square);
-            if (RectangleVisual != null) RectangleVisual.SetActive(Type == ShapeType.Rectangle);
+            if (RectangleVisual != null) RectangleVisual.SetActive(Type == ShapeType.Circle);
         }
         
         // Make the shape fall when platform falls
@@ -106,6 +121,12 @@ namespace Starter.Platformer
             // Enable pickup trigger when the shape falls
             PickupTrigger.enabled = true;
             Debug.Log($"KeyShape {gameObject.name} started falling. PickupTrigger enabled: {PickupTrigger.enabled}");
+
+            // # Show interaction text when shape starts falling
+            if (InteractionText != null)
+            {
+                InteractionText.gameObject.SetActive(true);
+            }
         }
         
         // Request pickup via RPC - call this from the client
@@ -135,6 +156,12 @@ namespace Starter.Platformer
                 
                 // Disable pickup trigger
                 PickupTrigger.enabled = false;
+
+                // # Update text when picked up
+                if (InteractionText != null)
+                {
+                    InteractionText.text = DropPrompt;
+                }
                 
                 // Random Up Force
                 float randomUpForce = Random.Range(5f, 10f);
@@ -174,6 +201,12 @@ namespace Starter.Platformer
                 
                 // Re-enable pickup trigger
                 PickupTrigger.enabled = true;
+
+                // # Update text when dropped
+                if (InteractionText != null)
+                {
+                    InteractionText.text = PickupPrompt;
+                }
             }
         }
         
@@ -240,7 +273,7 @@ namespace Starter.Platformer
             }
                 
             // Now it's safe to check IsPickedUp
-            if (Object.IsValid && IsPickedUp)
+            if (IsPickedUp)
             {
                 Debug.Log($"KeyShape {gameObject.name} is already picked up");
                 return;

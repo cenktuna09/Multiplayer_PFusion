@@ -21,7 +21,7 @@ namespace Starter.Platformer
         public GameObject UnlockedVisual;
         
         // Visual effects for success
-        public ParticleSystem SuccessParticles;
+        public ParticleSystem ZoneParticles;
 
         [Header("Audio")]
         // Audio for unlock
@@ -62,10 +62,12 @@ namespace Starter.Platformer
             if (LockedVisual != null) LockedVisual.SetActive(!IsUnlocked);
             if (UnlockedVisual != null) UnlockedVisual.SetActive(IsUnlocked);
             
-            // Play success particles if newly unlocked
-            if (IsUnlocked && SuccessParticles != null)
+            // Update particles color if unlocked
+            if (IsUnlocked && ZoneParticles != null)
             {
-                SuccessParticles.Play();
+                // Set green color for successful unlock
+                var main = ZoneParticles.main;
+                main.startColor = Color.green;
             }
         }
 
@@ -77,6 +79,25 @@ namespace Starter.Platformer
             if (HasStateAuthority && !IsUnlocked)
             {
                 DebugLog($"Has state authority and not unlocked yet.");
+                
+                // Set particle color based on match result
+                if (ZoneParticles != null)
+                {
+                    var main = ZoneParticles.main;
+                    
+                    if (keyShape.Type == Type)
+                    {
+                        // Red color for incorrect placement (matching shapes)
+                        main.startColor = Color.red;
+                        DebugLog($"KeyShape type ({keyShape.Type}) MATCHES UnlockShape type ({Type}). Cannot unlock!");
+                        return false;
+                    }
+                    else
+                    {
+                        // Green color for correct placement (non-matching shapes)
+                        main.startColor = Color.green;
+                    }
+                }
                 
                 // "Wrong Answers Only" mechanic:
                 // Can only unlock if the KeyShape type DOESN'T match the UnlockShape type
@@ -96,10 +117,6 @@ namespace Starter.Platformer
                     NotifyGameManager();
                     
                     return true;
-                }
-                else
-                {
-                    DebugLog($"KeyShape type ({keyShape.Type}) MATCHES UnlockShape type ({Type}). Cannot unlock!");
                 }
             }
             else
