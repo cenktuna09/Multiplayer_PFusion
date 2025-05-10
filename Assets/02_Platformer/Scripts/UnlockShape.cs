@@ -13,9 +13,6 @@ namespace Starter.Platformer
         public NetworkBool IsUnlocked { get; set; }
 
         // Visual representation for each shape type
-        public GameObject TriangleVisual;
-        public GameObject SquareVisual;
-        public GameObject RectangleVisual;
 
         // Visual for unlocked state
         public GameObject LockedVisual;
@@ -30,8 +27,6 @@ namespace Starter.Platformer
 
         public override void Spawned()
         {
-            // Initialize visuals based on assigned type
-            UpdateVisuals();
             
             // Initialize unlock state visual
             UpdateUnlockVisual();
@@ -41,15 +36,6 @@ namespace Starter.Platformer
         public void SetShapeType(ShapeType type)
         {
             Type = type;
-            UpdateVisuals();
-        }
-
-        // Enable the correct visual based on shape type
-        private void UpdateVisuals()
-        {
-            if (TriangleVisual != null) TriangleVisual.SetActive(Type == ShapeType.Triangle);
-            if (SquareVisual != null) SquareVisual.SetActive(Type == ShapeType.Square);
-            if (RectangleVisual != null) RectangleVisual.SetActive(Type == ShapeType.Rectangle);
         }
 
         // Update visual state based on unlock state
