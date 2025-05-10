@@ -52,6 +52,18 @@ namespace Starter.Platformer
         // Spawned flag to check if networked properties can be accessed
         private bool _isFullySpawned = false;
         
+        // Debug settings
+        [Header("Debug")]
+        public bool ShowDebugLogs = true;
+        
+        private void DebugLog(string message)
+        {
+            if (ShowDebugLogs)
+            {
+                Debug.Log($"[KeyShape {gameObject.name}] {message}");
+            }
+        }
+
         public override void Spawned()
         {
             // Ensure rigidbody reference is set
@@ -65,7 +77,7 @@ namespace Starter.Platformer
             // Setup pickup trigger if not assigned
             if (PickupTrigger == null)
             {
-                Debug.Log($"Creating PickupTrigger for {gameObject.name}");
+                DebugLog("Creating PickupTrigger");
                 PickupTrigger = gameObject.AddComponent<SphereCollider>();
                 PickupTrigger.radius = PickupTriggerRadius;
                 PickupTrigger.isTrigger = true;
@@ -76,9 +88,9 @@ namespace Starter.Platformer
             
             // Disable pickup trigger until the shape falls
             PickupTrigger.enabled = false;
-            Debug.Log($"KeyShape {gameObject.name} spawned. PickupTrigger enabled: {PickupTrigger.enabled}");
+            DebugLog($"Spawned. PickupTrigger enabled: {PickupTrigger.enabled}");
 
-            // # Hide interaction text at start
+            // Hide interaction text at start
             if (InteractionText != null)
             {
                 InteractionText.text = PickupPrompt;
@@ -120,9 +132,9 @@ namespace Starter.Platformer
             
             // Enable pickup trigger when the shape falls
             PickupTrigger.enabled = true;
-            Debug.Log($"KeyShape {gameObject.name} started falling. PickupTrigger enabled: {PickupTrigger.enabled}");
+            DebugLog($"started falling. PickupTrigger enabled: {PickupTrigger.enabled}");
 
-            // # Show interaction text when shape starts falling
+            // Show interaction text when shape starts falling
             if (InteractionText != null)
             {
                 InteractionText.gameObject.SetActive(true);
@@ -134,7 +146,7 @@ namespace Starter.Platformer
         {
             if (Object && Object.IsValid && !IsPickedUp)
             {
-                Debug.Log($"Player {player} requesting pickup of {gameObject.name}");
+                DebugLog($"Player {player} requesting pickup");
                 RPC_PickUp(player);
             }
         }
@@ -143,7 +155,7 @@ namespace Starter.Platformer
         [Rpc(RpcSources.All, RpcTargets.StateAuthority)]
         public void RPC_PickUp(PlayerRef player)
         {
-            Debug.Log($"RPC_PickUp called for player {player} on {gameObject.name}");
+            DebugLog($"RPC_PickUp called for player {player}");
             if (Object && Object.IsValid && !IsPickedUp)
             {
                 IsPickedUp = true;
@@ -157,7 +169,7 @@ namespace Starter.Platformer
                 // Disable pickup trigger
                 PickupTrigger.enabled = false;
 
-                // # Update text when picked up
+                // Update text when picked up
                 if (InteractionText != null)
                 {
                     InteractionText.text = DropPrompt;
@@ -179,7 +191,7 @@ namespace Starter.Platformer
         {
             if (Object && Object.IsValid && IsPickedUp)
             {
-                Debug.Log($"Player {PickedUpBy} requesting drop of {gameObject.name}");
+                DebugLog($"Player {PickedUpBy} requesting drop");
                 RPC_Drop();
             }
         }
@@ -188,7 +200,7 @@ namespace Starter.Platformer
         [Rpc(RpcSources.All, RpcTargets.StateAuthority)]
         public void RPC_Drop()
         {
-            Debug.Log($"RPC_Drop called for {gameObject.name}");
+            DebugLog("RPC_Drop called");
             if (Object && Object.IsValid && IsPickedUp)
             {
                 IsPickedUp = false;
@@ -202,7 +214,7 @@ namespace Starter.Platformer
                 // Re-enable pickup trigger
                 PickupTrigger.enabled = true;
 
-                // # Update text when dropped
+                // Update text when dropped
                 if (InteractionText != null)
                 {
                     InteractionText.text = PickupPrompt;
@@ -263,19 +275,19 @@ namespace Starter.Platformer
         // Register player entering pickup range
         private void OnTriggerEnter(Collider other)
         {
-            Debug.Log($"OnTriggerEnter: {other.gameObject.name} entered trigger of {gameObject.name}");
+            DebugLog($"OnTriggerEnter: {other.gameObject.name} entered trigger");
             
             // Safety check to prevent accessing networked properties before spawn
             if (!_isFullySpawned || !Object || !Object.IsValid)
             {
-                Debug.LogWarning($"KeyShape {gameObject.name} not fully spawned or Object not valid");
+                DebugLog("Not fully spawned or Object not valid");
                 return;
             }
                 
             // Now it's safe to check IsPickedUp
             if (IsPickedUp)
             {
-                Debug.Log($"KeyShape {gameObject.name} is already picked up");
+                DebugLog("Already picked up");
                 return;
             }
 
@@ -287,7 +299,7 @@ namespace Starter.Platformer
                 Player player = kcc.gameObject.GetComponent<Player>();
                 if (player != null)
                 {
-                    Debug.Log($"Setting player {player.gameObject.name} as in range for {gameObject.name} (via KCC)");
+                    DebugLog($"Setting player {player.gameObject.name} as in range (via KCC)");
                     _playerInRange = player;
                 }
             }
@@ -296,7 +308,7 @@ namespace Starter.Platformer
         // Unregister player leaving pickup range
         private void OnTriggerExit(Collider other)
         {
-            Debug.Log($"OnTriggerExit: {other.gameObject.name} exited trigger of {gameObject.name}");
+            DebugLog($"OnTriggerExit: {other.gameObject.name} exited trigger");
             
             // Safety check 
             if (!_isFullySpawned || !Object || !Object.IsValid)
@@ -310,7 +322,7 @@ namespace Starter.Platformer
                 Player player = kcc.gameObject.GetComponent<Player>();
                 if (player != null && player == _playerInRange)
                 {
-                    Debug.Log($"Clearing player {player.gameObject.name} from range of {gameObject.name} (via KCC)");
+                    DebugLog($"Clearing player {player.gameObject.name} from range");
                     _playerInRange = null;
                 }
             }
@@ -322,7 +334,7 @@ namespace Starter.Platformer
             // Only return player if we're fully spawned
             if (!_isFullySpawned || !Object || !Object.IsValid)
             {
-                Debug.LogWarning($"GetPlayerInRange called on {gameObject.name} but not fully spawned or Object not valid");
+                DebugLog("GetPlayerInRange called but not fully spawned or Object not valid");
                 return null;
             }
                 
