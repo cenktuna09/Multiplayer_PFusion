@@ -5,6 +5,7 @@
 		}
 	],
 	"settings": {
-		"dotnet.defaultSolution": "Multiplayer_PFusion.sln"
+		"dotnet.defaultSolution": "Multiplayer_PFusion.sln",
+		"dotnet.preferCSharpExtension": true
 	}
 }

@@ -1780,6 +1780,7 @@ GameObject:
   - component: {fileID: 448809065}
   - component: {fileID: 448809068}
   - component: {fileID: 448809067}
+  - component: {fileID: 448809069}
   m_Layer: 0
   m_Name: Cube (1)
   m_TagString: Untagged
@@ -1886,14 +1887,34 @@ MonoBehaviour:
   _Type: 1
   _IsUnlocked:
     _value: 0
-  TriangleVisual: {fileID: 0}
-  SquareVisual: {fileID: 448809063}
-  RectangleVisual: {fileID: 0}
+  GameManager: {fileID: 5446807034574121355}
   LockedVisual: {fileID: 0}
   UnlockedVisual: {fileID: 0}
-  UnlockSound: {fileID: 0}
+  SuccessParticles: {fileID: 1459884222}
+  UnlockSound: {fileID: 8300000, guid: dc86f3bef8384e145b23fba67a4f02ad, type: 3}
   UnlockSoundVolume: 1
-  TriggerArea: {fileID: 0}
+  TriggerArea: {fileID: 448809069}
+--- !u!65 &448809069
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 448809063}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 1
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 3, y: 6, z: 3}
+  m_Center: {x: 0.00000023841858, y: 0.25000015, z: 0.00000047683716}
 --- !u!1001 &462789141
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -10383,8 +10404,10 @@ MonoBehaviour:
   openDuration: 1
   holdDuration: 1
   autoCloseDelay: 2
+  RequiresPuzzleCompletion: 1
   leftDoor: {fileID: 1950310679}
   rightDoor: {fileID: 2035698222}
+  GameManager: {fileID: 0}
   openCurve:
     serializedVersion: 2
     m_Curve:
@@ -10433,12 +10456,14 @@ MonoBehaviour:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
-  openAudioClip: {fileID: 0}
+  openAudioClip: {fileID: 8300000, guid: dc86f3bef8384e145b23fba67a4f02ad, type: 3}
   closeAudioClip: {fileID: 0}
   audioVolume: 1
   _IsOpen:
     _value: 0
   _TickActivated: 0
+  _IsUnlocked:
+    _value: 0
 --- !u!114 &1907841982
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -11540,6 +11565,12 @@ MonoBehaviour:
   GameOverTime: 3.5
   PlayerPrefab: {fileID: 1526919877228550752, guid: a2b148ba63c99c648b17361069e9e554, type: 3}
   SpawnRadius: 2.1
+  RequiredPuzzlesToUnlock: 1
+  DoorsToUnlock:
+  - {fileID: 1907841981}
+  _SolvedPuzzleCount: 0
+  _ArePuzzlesSolved:
+    _value: 0
 --- !u!1001 &7566989105474698698
 PrefabInstance:
   m_ObjectHideFlags: 0

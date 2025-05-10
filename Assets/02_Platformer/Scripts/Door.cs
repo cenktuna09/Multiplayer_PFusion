@@ -15,10 +15,12 @@ namespace Starter.Platformer
 		public float openDuration = 1f;
 		public float holdDuration = 1f;
 		public float autoCloseDelay = 2f;
+		public bool RequiresPuzzleCompletion = true;
 		
 		[Header("References")]
 		public Transform leftDoor;
 		public Transform rightDoor;
+		public GameManager GameManager;
 		
 		[Header("Animation")]
 		public AnimationCurve openCurve = AnimationCurve.Linear(0, 0, 1, 1);
@@ -37,9 +39,21 @@ namespace Starter.Platformer
 		
 		[Networked]
 		private TickTimer _cooldown { get; set; }
+		
+		[Networked]
+		public NetworkBool IsUnlocked { get; set; }
 
 		private bool isAnimating = false;
 		private int _playerCount = 0;
+		
+		public override void Spawned()
+		{
+			// Find GameManager if not assigned
+			if (GameManager == null)
+			{
+				GameManager = FindObjectOfType<GameManager>();
+			}
+		}
 
 		public override void Render()
 		{
@@ -81,6 +95,34 @@ namespace Starter.Platformer
 		{
 			isAnimating = true;
 			
+			// Play audio when door state changes
+			if (IsOpen && openAudioClip != null)
+			{
+				AudioSource.PlayClipAtPoint(openAudioClip, transform.position, audioVolume);
+			}
+			else if (!IsOpen && closeAudioClip != null) 
+			{
+				AudioSource.PlayClipAtPoint(closeAudioClip, transform.position, audioVolume);
+			}
+		}
+		
+		// RPC to set the door's unlock state
+		[Rpc(RpcSources.All, RpcTargets.StateAuthority)]
+		public void RPC_SetUnlocked(bool unlocked)
+		{
+			if (HasStateAuthority)
+			{
+				IsUnlocked = unlocked;
+				Debug.Log($"Door unlocked state set to: {unlocked}");
+			}
+		}
+		
+		// Checks if the door can be opened
+		private bool CanOpen()
+		{
+			// If door doesn't require puzzle completion OR it's unlocked
+			return !RequiresPuzzleCompletion || IsUnlocked || 
+			       (GameManager != null && GameManager.ArePuzzlesSolved);
 		}
 		
 		// Called when a player enters the door's activation area
@@ -95,12 +137,17 @@ namespace Starter.Platformer
 				
 			_playerCount++;
 				
-			// Open the door when player enters
-			if (!IsOpen)
+			// Only open the door when puzzle is completed (if required)
+			if (!IsOpen && CanOpen())
 			{
 				IsOpen = true;
 				TickActivated = Runner.Tick;
 				_cooldown = TickTimer.None;
+			}
+			else if (!IsOpen && RequiresPuzzleCompletion && !CanOpen())
+			{
+				// Door is locked - maybe play a locked sound or show a hint
+				Debug.Log("Door is locked! Solve the puzzles first.");
 			}
 		}
 		
