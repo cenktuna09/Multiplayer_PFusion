@@ -204,7 +204,7 @@ namespace Starter.Platformer
                             NetworkPosition = holdPosition;
                             
                             // Smoothly move to the desired position using Slerp
-                            transform.position = Vector3.Slerp(transform.position, holdPosition, Runner.DeltaTime * 20.0f);
+                            transform.position = Vector3.Slerp(transform.position, holdPosition, Runner.DeltaTime * 2.5f);
                         }
                     }
                 }
@@ -223,7 +223,7 @@ namespace Starter.Platformer
             if (!HasStateAuthority && Object && Object.IsValid)
             {
                 // Use Slerp for smooth movement
-                transform.position = Vector3.Slerp(transform.position, NetworkPosition, Time.deltaTime * 2.0f);
+                transform.position = Vector3.Slerp(transform.position, NetworkPosition, Time.deltaTime * 2.5f);
             }
         }
         
