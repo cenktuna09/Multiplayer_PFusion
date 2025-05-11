@@ -141,7 +141,15 @@ namespace Starter.Platformer
             {
                 IsUnlocked = false;
                 _hasUpdatedParticleColor = false;
-                DebugLog("Lock reset");
+                
+                // Reset the particle color to default
+                if (ZoneParticles != null)
+                {
+                    var main = ZoneParticles.main;
+                    main.startColor = Color.yellow; // Reset to default color
+                }
+                
+                DebugLog("Lock reset and visuals updated");
             }
         }
         

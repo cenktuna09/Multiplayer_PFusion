@@ -96,9 +96,31 @@ namespace Starter.Platformer
 			{
 				if (door != null)
 				{
-					door.RPC_SetUnlocked(false);
+					door.ResetDoor();
 				}
 			}
+			
+			// Find and reset all KeyShapes in the scene
+			KeyShape[] allKeyShapes = FindObjectsOfType<KeyShape>();
+			foreach (KeyShape keyShape in allKeyShapes)
+			{
+				if (keyShape != null)
+				{
+					keyShape.ResetKeyShape();
+				}
+			}
+			
+			// Find and reset all UnlockShapes in the scene
+			UnlockShape[] allUnlockShapes = FindObjectsOfType<UnlockShape>();
+			foreach (UnlockShape unlockShape in allUnlockShapes)
+			{
+				if (unlockShape != null)
+				{
+					unlockShape.ResetLock();
+				}
+			}
+			
+			Debug.Log("All puzzles, keys and doors reset!");
 		}
 
 		public override void Spawned()

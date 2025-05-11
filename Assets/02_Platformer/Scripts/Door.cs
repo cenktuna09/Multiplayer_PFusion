@@ -113,7 +113,33 @@ namespace Starter.Platformer
 			if (HasStateAuthority)
 			{
 				IsUnlocked = unlocked;
+				
+				// If door is being locked, also ensure it's closed
+				if (!unlocked && IsOpen)
+				{
+					IsOpen = false;
+					TickActivated = Runner.Tick;
+				}
+				
 				Debug.Log($"Door unlocked state set to: {unlocked}");
+			}
+		}
+		
+		// Called when the game resets - resets the door to closed and locked state
+		public void ResetDoor()
+		{
+			if (HasStateAuthority)
+			{
+				IsUnlocked = false;
+				
+				// Ensure door is closed
+				if (IsOpen)
+				{
+					IsOpen = false;
+					TickActivated = Runner.Tick;
+				}
+				
+				Debug.Log("Door reset to locked and closed state");
 			}
 		}
 		

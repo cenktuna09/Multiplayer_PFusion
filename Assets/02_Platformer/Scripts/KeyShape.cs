@@ -338,5 +338,53 @@ namespace Starter.Platformer
                 
             return _playerInRange;
         }
+        
+        // Reset the KeyShape to its initial state when the game restarts
+        public void ResetKeyShape()
+        {
+            if (!HasStateAuthority) return;
+            
+            DebugLog("Resetting KeyShape");
+            
+            // If the key was being held by a player, release it
+            if (IsPickedUp)
+            {
+                IsPickedUp = false;
+                PickedUpBy = default;
+            }
+            
+            // Make the object kinematic during repositioning to prevent falling
+            Rigidbody.isKinematic = true;
+            
+            // Reset collider settings
+            ShapeCollider.isTrigger = false;
+            ShapeCollider.enabled = true;
+            
+            // Re-enable pickup trigger
+            PickupTrigger.enabled = true;
+            
+            // Move key shape back to its original spawn position if possible
+            if (transform.parent != null)
+            {
+                // Move to parent position (its original platform)
+                transform.position = transform.parent.position;
+                DebugLog($"Moved KeyShape back to parent position: {transform.position}");
+            }
+            else
+            {
+                // If no parent, move to a safe position
+                Vector3 safePosition = transform.position;
+                safePosition.y = 1f; // Just above ground level
+                transform.position = safePosition;
+                DebugLog($"No parent found, moved to safe position: {safePosition}");
+            }
+            
+            // Keep it kinematic to prevent falling when the level starts
+            // We can change this if we want it to fall naturally
+            Rigidbody.isKinematic = true;
+            
+            // Update network position
+            NetworkPosition = transform.position;
+        }
     }
 } 
