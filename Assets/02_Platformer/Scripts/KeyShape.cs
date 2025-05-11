@@ -432,5 +432,100 @@ namespace Starter.Platformer
             // Update network position
             NetworkPosition = transform.position;
         }
+        
+        // Handle player disconnection - called from GameManager.OnPlayerLeft
+        public void HandlePlayerLeft(PlayerRef player)
+        {
+            if (!HasStateAuthority) 
+            {
+                DebugLog($"No state authority in HandlePlayerLeft, requesting...");
+                Object.RequestStateAuthority();
+                return;
+            }
+            
+            DebugLog($"Handling player {player} left event");
+            
+            // Check if this KeyShape was being held by the disconnected player
+            if (IsPickedUp && PickedUpBy == player)
+            {
+                DebugLog($"KeyShape was held by disconnected player {player}, dropping it");
+                
+                // First drop the key shape
+                IsPickedUp = false;
+                PickedUpBy = default;
+                
+                // Update networked state for proper state recovery
+                IsKinematic = false;
+                IsColliderTrigger = false;
+                IsColliderEnabled = true;
+                IsPickupTriggerEnabled = true;
+                
+                // Apply changes locally
+                Rigidbody.isKinematic = false;
+                ShapeCollider.isTrigger = false;
+                ShapeCollider.enabled = true;
+                PickupTrigger.enabled = true;
+                
+                // Update network position to current position
+                NetworkPosition = transform.position;
+                
+                // Add some random position offset so it's not exactly at the player's last position
+                Vector3 randomOffset = new Vector3(Random.Range(-1f, 1f), 0.5f, Random.Range(-1f, 1f));
+                transform.position += randomOffset;
+                NetworkPosition = transform.position;
+                
+                // Add some force to make it bounce a bit
+                if (Rigidbody != null)
+                {
+                    Rigidbody.AddForce(Vector3.up * 5f + randomOffset * 2f, ForceMode.Impulse);
+                }
+                
+                DebugLog("KeyShape dropped due to player disconnect");
+            }
+            
+            // Check if we need to reset on a new platform
+            if (transform.position.y < -10f)
+            {
+                DebugLog("KeyShape fell too low, resetting position");
+                ResetKeyShape();
+            }
+        }
+        
+        // Handle network shutdown event - called from GameManager.OnShutdown
+        public void HandleNetworkShutdown()
+        {
+            DebugLog("Handling network shutdown");
+            
+            // Ensure the KeyShape stays in a valid state
+            if (HasStateAuthority)
+            {
+                // If being held by a player who's disconnecting, drop it
+                if (IsPickedUp)
+                {
+                    DebugLog("Dropping KeyShape during network shutdown");
+                    IsPickedUp = false;
+                    PickedUpBy = default;
+                    
+                    // Update networked state
+                    IsKinematic = false;
+                    IsColliderTrigger = false;
+                    IsColliderEnabled = true;
+                    IsPickupTriggerEnabled = true;
+                    
+                    // Apply changes locally
+                    Rigidbody.isKinematic = false;
+                    ShapeCollider.isTrigger = false;
+                    ShapeCollider.enabled = true;
+                    PickupTrigger.enabled = true;
+                }
+                
+                // Move to a safe position if needed
+                if (transform.position.y < -10f)
+                {
+                    DebugLog("KeyShape in unsafe position, resetting");
+                    ResetKeyShape();
+                }
+            }
+        }
     }
 } 

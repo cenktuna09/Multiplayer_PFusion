@@ -1958,7 +1958,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   SortKey: 3569013125
   ObjectInterest: 1
-  Flags: 262145
+  Flags: 131073
   NestedObjects: []
   NetworkedBehaviours:
   - {fileID: 448809068}
@@ -15184,7 +15184,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   SortKey: 782873623
   ObjectInterest: 1
-  Flags: 262145
+  Flags: 131073
   NestedObjects: []
   NetworkedBehaviours:
   - {fileID: 1614629124}
@@ -16057,13 +16057,10 @@ MonoBehaviour:
   openAudioClip: {fileID: 8300000, guid: dc86f3bef8384e145b23fba67a4f02ad, type: 3}
   closeAudioClip: {fileID: 0}
   audioVolume: 1
-  ShowDebugLogs: 1
   _IsOpen:
     _value: 0
   _TickActivated: 0
   _IsUnlocked:
-    _value: 0
-  _IsDestroyed:
     _value: 0
 --- !u!114 &1907841982
 MonoBehaviour:

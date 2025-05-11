@@ -195,5 +195,65 @@ namespace Starter.Platformer
 				_cooldown = TickTimer.CreateFromSeconds(Runner, autoCloseDelay);
 			}
 		}
+		
+		// Handle player disconnection - called from GameManager.OnPlayerLeft
+		public void HandlePlayerLeft(PlayerRef player)
+		{
+			Debug.Log($"Door {gameObject.name} handling player {player} left event");
+			
+			if (!HasStateAuthority) 
+			{
+				Debug.Log($"HandlePlayerLeft: No state authority for door {gameObject.name}");
+				// Try to request authority if we don't have it
+				if (Object != null && Object.IsValid)
+				{
+					Object.RequestStateAuthority();
+				}
+				return;
+			}
+			
+			// Ensure proper state when player leaves
+			// This helps ensure doors stay in a consistent state even after abrupt disconnects
+			if (IsOpen && _playerCount > 0)
+			{
+				// Reduce player count to prevent door from staying open indefinitely
+				// This assumes the disconnected player might have been in the trigger
+				_playerCount = Mathf.Max(0, _playerCount - 1);
+				
+				// If no players remain in trigger, schedule door to close
+				if (_playerCount == 0)
+				{
+					_cooldown = TickTimer.CreateFromSeconds(Runner, autoCloseDelay);
+					Debug.Log($"Door will close after player {player} left");
+				}
+			}
+		}
+		
+		// Handle network shutdown event - called from GameManager.OnShutdown
+		public void HandleNetworkShutdown()
+		{
+			Debug.Log($"Door {gameObject.name} handling network shutdown");
+			
+			// Reset door position to avoid weird states after reconnecting
+			if (IsOpen)
+			{
+				IsOpen = false;
+				
+				// When network is shutting down, update door visuals immediately
+				float targetPos = 0; // Closed position
+				
+				if (leftDoor != null)
+				{
+					leftDoor.localPosition = new Vector3(targetPos, 0, 0);
+				}
+				
+				if (rightDoor != null)
+				{
+					rightDoor.localPosition = new Vector3(-targetPos, 0, 0);
+				}
+				
+				Debug.Log("Door closed due to network shutdown");
+			}
+		}
 	}
 }

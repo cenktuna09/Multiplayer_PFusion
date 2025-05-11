@@ -17,6 +17,9 @@ namespace Starter.Platformer
 
         [Networked]
         private NetworkBool _previousLockState { get; set; }
+        
+        [Networked]
+        private NetworkBool _wasUnlockedByDisconnectedPlayer { get; set; }
 
         // Reference to GameManager
         public GameManager GameManager; 
@@ -39,9 +42,9 @@ namespace Starter.Platformer
         
         // Debug settings
         public bool ShowDebugLogs = true;
-
-        // Track if particle color has been updated
-        // private bool _hasUpdatedParticleColor = false;
+        
+        // Store initial unlocked state for reconnection
+        private bool _initialUnlockState = false;
 
         public override void Spawned()
         {
@@ -54,8 +57,34 @@ namespace Starter.Platformer
             
             // Initialize the previous state
             _previousLockState = IsUnlocked;
+            _initialUnlockState = IsUnlocked;
             
             DebugLog($"UnlockShape spawned. Type: {Type}, IsUnlocked: {IsUnlocked}");
+            
+            // Ensure visuals match current state immediately
+            UpdateVisuals();
+        }
+        
+        // Update visual state to match current unlock state
+        private void UpdateVisuals()
+        {
+            if (LockedVisual != null) LockedVisual.SetActive(!IsUnlocked);
+            if (UnlockedVisual != null) UnlockedVisual.SetActive(IsUnlocked);
+            
+            // Update particle color based on unlock state
+            if (ZoneParticles != null)
+            {
+                var main = ZoneParticles.main;
+                if (IsUnlocked)
+                {
+                    main.startColor = Color.green;
+                    _hasUpdatedParticleColor = true;
+                }
+                else
+                {
+                    main.startColor = Color.yellow;
+                }
+            }
         }
 
         // Set the shape type and update visuals
@@ -99,9 +128,15 @@ namespace Starter.Platformer
         {
             DebugLog($"TryUnlock called with KeyShape type: {keyShape.Type}. Current UnlockShape type: {Type}");
             
-            if (HasStateAuthority && !IsUnlocked)
+            if (IsUnlocked)
             {
-                DebugLog($"Has state authority and not unlocked yet.");
+                DebugLog("Already unlocked, cannot unlock again");
+                return false;
+            }
+            
+            if (HasStateAuthority)
+            {
+                DebugLog($"Has state authority and trying to unlock.");
                 
                 // Set particle color based on match result
                 if (ZoneParticles != null)
@@ -122,13 +157,21 @@ namespace Starter.Platformer
                 if (keyShape.Type != Type)
                 {
                     DebugLog($"KeyShape type ({keyShape.Type}) doesn't match UnlockShape type ({Type}). Unlocking!");
+                    
+                    // Explicitly set all related properties
                     IsUnlocked = true;
+                    _previousLockState = true;
+                    _hasUpdatedParticleColor = true;
+                    _wasUnlockedByDisconnectedPlayer = false;
                     
                     // Play unlock sound
                     if (UnlockSound != null)
                         AudioSource.PlayClipAtPoint(UnlockSound, transform.position, UnlockSoundVolume);
                     
-                    // Notify GameManager about the solved puzzle
+                    // Update visuals immediately 
+                    UpdateVisuals();
+                    
+                    // Önemli: Notify GameManager about the solved puzzle
                     NotifyGameManager();
                     
                     return true;
@@ -137,6 +180,8 @@ namespace Starter.Platformer
             else
             {
                 DebugLog($"Cannot unlock. HasStateAuthority: {HasStateAuthority}, IsUnlocked: {IsUnlocked}");
+                // Try requesting authority
+                Object.RequestStateAuthority();
             }
             return false;
         }
@@ -144,15 +189,34 @@ namespace Starter.Platformer
         // Notify GameManager about this unlock
         private void NotifyGameManager()
         {
-            if (HasStateAuthority && GameManager != null)
+            if (GameManager != null)
             {
                 DebugLog("Notifying GameManager about solved puzzle");
-                // Notify the GameManager that another puzzle is solved
-                GameManager.RPC_PuzzleSolved();
+                
+                if (HasStateAuthority)
+                {
+                    // Notify the GameManager that another puzzle is solved
+                    GameManager.RPC_PuzzleSolved();
+                }
+                else
+                {
+                    DebugLog("No state authority, requesting...");
+                    Object.RequestStateAuthority();
+                }
             }
             else
             {
-                DebugLog($"Cannot notify GameManager. HasStateAuthority: {HasStateAuthority}, GameManager is null: {GameManager == null}");
+                DebugLog("Cannot notify GameManager - GameManager is null");
+                // Try to find GameManager if it wasn't set
+                GameManager = FindObjectOfType<GameManager>();
+                if (GameManager != null)
+                {
+                    DebugLog("Found GameManager, notifying about solved puzzle");
+                    if (HasStateAuthority)
+                    {
+                        GameManager.RPC_PuzzleSolved();
+                    }
+                }
             }
         }
         
@@ -161,9 +225,13 @@ namespace Starter.Platformer
         {
             if (HasStateAuthority)
             {
+                DebugLog($"ResetLock called. Current state - IsUnlocked: {IsUnlocked}, _wasUnlockedByDisconnectedPlayer: {_wasUnlockedByDisconnectedPlayer}");
+                
+                // Kesinlikle kilitli duruma getir
                 IsUnlocked = false;
                 _hasUpdatedParticleColor = false;
                 _previousLockState = false;
+                _wasUnlockedByDisconnectedPlayer = false;
                 
                 // Reset the particle color to default
                 if (ZoneParticles != null)
@@ -172,7 +240,130 @@ namespace Starter.Platformer
                     main.startColor = Color.yellow; // Reset to default color
                 }
                 
-                DebugLog("Lock reset and visuals updated");
+                // Update visuals immediately
+                UpdateVisuals();
+                
+                DebugLog("Lock reset complete and visuals updated");
+            }
+            else
+            {
+                DebugLog("Cannot reset lock - no state authority");
+                // Try to request authority
+                Object.RequestStateAuthority();
+            }
+        }
+        
+        // Force reset with additional safeguards
+        public void ForceReset()
+        {
+            DebugLog("ForceReset called - will ensure UnlockShape is fully reset");
+            
+            if (!HasStateAuthority)
+            {
+                DebugLog("ForceReset: No state authority, requesting...");
+                Object.RequestStateAuthority();
+                return;
+            }
+            
+            // Resetle tüm değerleri
+            IsUnlocked = false;
+            _hasUpdatedParticleColor = false;
+            _previousLockState = false;
+            _wasUnlockedByDisconnectedPlayer = false;
+            
+            // Reset the particle color
+            if (ZoneParticles != null)
+            {
+                var main = ZoneParticles.main;
+                main.startColor = Color.yellow;
+            }
+            
+            // Görsel durumu güncelle
+            UpdateVisuals();
+            
+            // Ekstra kontrol
+            if (LockedVisual != null) LockedVisual.SetActive(true);
+            if (UnlockedVisual != null) UnlockedVisual.SetActive(false);
+            
+            DebugLog("ForceReset completed - UnlockShape is now fully reset");
+        }
+        
+        // Fix unlock state after a player disconnect
+        public void ForceUnlock()
+        {
+            if (HasStateAuthority)
+            {
+                if (!IsUnlocked)
+                {
+                    DebugLog("Forcing unlock after player disconnect");
+                    IsUnlocked = true;
+                    _wasUnlockedByDisconnectedPlayer = true;
+                    
+                    // Update visuals
+                    UpdateVisuals();
+                    
+                    // Notify GameManager if needed
+                    NotifyGameManager();
+                }
+            }
+        }
+        
+        // Handle player disconnection - called from GameManager.OnPlayerLeft
+        public void HandlePlayerLeft(PlayerRef player)
+        {
+            DebugLog($"Handling player {player} left event");
+            
+            if (!HasStateAuthority)
+            {
+                // Try to request authority if we need it
+                DebugLog($"No state authority in HandlePlayerLeft, requesting...");
+                Object.RequestStateAuthority();
+                return;
+            }
+            
+            // If the shape was already unlocked, make sure it stays that way
+            if (IsUnlocked || _wasUnlockedByDisconnectedPlayer)
+            {
+                DebugLog($"Shape was unlocked by a disconnected player, ensuring it stays unlocked");
+                IsUnlocked = true;
+                _wasUnlockedByDisconnectedPlayer = true;
+                
+                // Ensure GameManager is notified
+                if (GameManager != null)
+                {
+                    DebugLog("Re-notifying GameManager about solved puzzle after disconnect");
+                    GameManager.RPC_PuzzleSolved();
+                }
+            }
+            
+            // Always update visuals to ensure clients see the correct state
+            UpdateVisuals();
+            
+            DebugLog($"UnlockShape state after player {player} left: IsUnlocked={IsUnlocked}");
+        }
+        
+        // Handle network shutdown event - called from GameManager.OnShutdown
+        public void HandleNetworkShutdown()
+        {
+            DebugLog("Handling network shutdown");
+            
+            // Ensure the UnlockShape maintains correct state during shutdown
+            if (HasStateAuthority)
+            {
+                // If this shape was unlocked, make sure it stays that way
+                if (IsUnlocked || _wasUnlockedByDisconnectedPlayer)
+                {
+                    DebugLog("Ensuring UnlockShape stays unlocked during shutdown");
+                    IsUnlocked = true;
+                    _wasUnlockedByDisconnectedPlayer = true;
+                }
+                
+                // Always update visuals to ensure proper state is displayed
+                UpdateVisuals();
+            }
+            else
+            {
+                DebugLog("No state authority during network shutdown");
             }
         }
         
