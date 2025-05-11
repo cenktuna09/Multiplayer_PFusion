@@ -20,6 +20,19 @@ namespace Starter.Platformer
         [Networked]
         private Vector3 NetworkPosition { get; set; }
         
+        // Network collider state to ensure sync across clients
+        [Networked]
+        public NetworkBool IsColliderTrigger { get; set; }
+        
+        [Networked]
+        public NetworkBool IsColliderEnabled { get; set; }
+        
+        [Networked]
+        public NetworkBool IsPickupTriggerEnabled { get; set; }
+        
+        [Networked]
+        public NetworkBool IsKinematic { get; set; }
+        
         public Rigidbody Rigidbody;
         public Collider ShapeCollider;
         
@@ -86,6 +99,12 @@ namespace Starter.Platformer
             // Increase radius to make pickup easier
             PickupTrigger.radius = 2.5f; // Increased from default value
             
+            // Initialize networked collider state
+            IsColliderTrigger = ShapeCollider.isTrigger;
+            IsColliderEnabled = ShapeCollider.enabled;
+            IsPickupTriggerEnabled = false;
+            IsKinematic = Rigidbody.isKinematic;
+            
             // Disable pickup trigger until the shape falls
             PickupTrigger.enabled = false;
             DebugLog($"Spawned. PickupTrigger enabled: {PickupTrigger.enabled}");
@@ -125,13 +144,16 @@ namespace Starter.Platformer
         // Make the shape fall when platform falls
         public void StartFalling()
         {
-            Rigidbody.isKinematic = false;
+            if (HasStateAuthority)
+            {
+                IsKinematic = false;
+                IsPickupTriggerEnabled = true;
+                Rigidbody.isKinematic = false;
+                
+                // Apply downward force like FallingPlatform
+                Rigidbody.AddForce(Vector3.down * 20f, ForceMode.Impulse);
+            }
             
-            // Apply downward force like FallingPlatform
-            Rigidbody.AddForce(Vector3.down * 20f, ForceMode.Impulse);
-            
-            // Enable pickup trigger when the shape falls
-            PickupTrigger.enabled = true;
             DebugLog($"started falling. PickupTrigger enabled: {PickupTrigger.enabled}");
         }
         
@@ -154,13 +176,17 @@ namespace Starter.Platformer
             {
                 IsPickedUp = true;
                 PickedUpBy = player;
-                Rigidbody.isKinematic = true;
                 
-                // Collider Trigger
+                // Update networked state
+                IsKinematic = true;
+                IsColliderTrigger = true;
+                IsColliderEnabled = true;
+                IsPickupTriggerEnabled = false;
+                
+                // Apply changes locally on state authority
+                Rigidbody.isKinematic = true;
                 ShapeCollider.isTrigger = true;
                 ShapeCollider.enabled = true;
-                
-                // Disable pickup trigger
                 PickupTrigger.enabled = false;
                 
                 // Random Up Force
@@ -193,13 +219,17 @@ namespace Starter.Platformer
             {
                 IsPickedUp = false;
                 PickedUpBy = default;
-                Rigidbody.isKinematic = false;
                 
-                // Collider Trigger 
+                // Update networked state
+                IsKinematic = false;
+                IsColliderTrigger = false;
+                IsColliderEnabled = true;
+                IsPickupTriggerEnabled = true;
+                
+                // Apply changes locally on state authority
+                Rigidbody.isKinematic = false;
                 ShapeCollider.isTrigger = false;
                 ShapeCollider.enabled = true;
-                
-                // Re-enable pickup trigger
                 PickupTrigger.enabled = true;
             }
         }
@@ -246,18 +276,36 @@ namespace Starter.Platformer
         // Handle position updates for non-state authority clients
         public override void Render()
         {
-            // Only non-state authority needs to update position in Render
-            if (!HasStateAuthority && Object && Object.IsValid)
+            // Safety check
+            if (!Object || !Object.IsValid)
+                return;
+
+            // Update physical state based on networked values for all clients
+            ShapeCollider.isTrigger = IsColliderTrigger;
+            ShapeCollider.enabled = IsColliderEnabled;
+            PickupTrigger.enabled = IsPickupTriggerEnabled;
+            Rigidbody.isKinematic = IsKinematic;
+                
+            // Position updates for non-state authority clients
+            if (!HasStateAuthority)
             {
-                // Use Slerp for smooth movement
-                transform.position = Vector3.Slerp(transform.position, NetworkPosition, Time.deltaTime * 2.5f);
+                // Use direct assignment for better sync when picked up
+                if (IsPickedUp)
+                {
+                    transform.position = NetworkPosition;
+                }
+                else
+                {
+                    // Use smoother interpolation for physics objects
+                    transform.position = Vector3.Slerp(transform.position, NetworkPosition, Time.deltaTime * 10f);
+                }
             }
 
             // Update UI text state
             if (InteractionText != null)
             {
                 // Update text visibility based on pickup trigger state
-                InteractionText.gameObject.SetActive(PickupTrigger.enabled || IsPickedUp);
+                InteractionText.gameObject.SetActive(IsPickupTriggerEnabled || IsPickedUp);
 
                 // Update text content based on pickup state
                 InteractionText.text = IsPickedUp ? DropPrompt : PickupPrompt;
@@ -353,14 +401,16 @@ namespace Starter.Platformer
                 PickedUpBy = default;
             }
             
-            // Make the object kinematic during repositioning to prevent falling
-            Rigidbody.isKinematic = true;
+            // Reset networked state
+            IsKinematic = true;
+            IsColliderTrigger = false;
+            IsColliderEnabled = true;
+            IsPickupTriggerEnabled = true;
             
-            // Reset collider settings
+            // Apply changes locally
+            Rigidbody.isKinematic = true;
             ShapeCollider.isTrigger = false;
             ShapeCollider.enabled = true;
-            
-            // Re-enable pickup trigger
             PickupTrigger.enabled = true;
             
             // Move key shape back to its original spawn position if possible
@@ -378,10 +428,6 @@ namespace Starter.Platformer
                 transform.position = safePosition;
                 DebugLog($"No parent found, moved to safe position: {safePosition}");
             }
-            
-            // Keep it kinematic to prevent falling when the level starts
-            // We can change this if we want it to fall naturally
-            Rigidbody.isKinematic = true;
             
             // Update network position
             NetworkPosition = transform.position;
