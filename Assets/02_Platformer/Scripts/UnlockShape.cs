@@ -11,6 +11,12 @@ namespace Starter.Platformer
 
         [Networked]
         public NetworkBool IsUnlocked { get; set; }
+        
+        [Networked]
+        private NetworkBool _hasUpdatedParticleColor { get; set; }
+
+        [Networked]
+        private NetworkBool _previousLockState { get; set; }
 
         // Reference to GameManager
         public GameManager GameManager; 
@@ -35,7 +41,7 @@ namespace Starter.Platformer
         public bool ShowDebugLogs = true;
 
         // Track if particle color has been updated
-        private bool _hasUpdatedParticleColor = false;
+        // private bool _hasUpdatedParticleColor = false;
 
         public override void Spawned()
         {
@@ -45,6 +51,9 @@ namespace Starter.Platformer
                 GameManager = FindObjectOfType<GameManager>();
                 DebugLog("Found GameManager: " + (GameManager != null));
             }
+            
+            // Initialize the previous state
+            _previousLockState = IsUnlocked;
             
             DebugLog($"UnlockShape spawned. Type: {Type}, IsUnlocked: {IsUnlocked}");
         }
@@ -62,13 +71,26 @@ namespace Starter.Platformer
             if (LockedVisual != null) LockedVisual.SetActive(!IsUnlocked);
             if (UnlockedVisual != null) UnlockedVisual.SetActive(IsUnlocked);
             
-            // Update particles color if unlocked and not already updated
-            if (IsUnlocked && ZoneParticles != null && !_hasUpdatedParticleColor)
+            // Only update particle color when lock state changes
+            if (ZoneParticles != null && (_previousLockState != IsUnlocked || !_hasUpdatedParticleColor && IsUnlocked))
             {
-                // Set green color for successful unlock
                 var main = ZoneParticles.main;
-                main.startColor = Color.green;
-                _hasUpdatedParticleColor = true;
+                if (IsUnlocked)
+                {
+                    // Set green color for successful unlock
+                    DebugLog("Setting particle color to green");
+                    main.startColor = Color.green;
+                    _hasUpdatedParticleColor = true;
+                }
+                else
+                {
+                    // Set yellow color when locked
+                    DebugLog("Setting particle color to yellow");
+                    main.startColor = Color.yellow;
+                }
+                
+                // Update previous state
+                _previousLockState = IsUnlocked;
             }
         }
 
@@ -141,6 +163,7 @@ namespace Starter.Platformer
             {
                 IsUnlocked = false;
                 _hasUpdatedParticleColor = false;
+                _previousLockState = false;
                 
                 // Reset the particle color to default
                 if (ZoneParticles != null)

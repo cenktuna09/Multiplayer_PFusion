@@ -15199,7 +15199,7 @@ MonoBehaviour:
   UnlockSound: {fileID: 8300000, guid: dc86f3bef8384e145b23fba67a4f02ad, type: 3}
   UnlockSoundVolume: 1
   TriggerArea: {fileID: 1614629122}
-  ShowDebugLogs: 0
+  ShowDebugLogs: 1
 --- !u!23 &1614629125
 MeshRenderer:
   m_ObjectHideFlags: 0
