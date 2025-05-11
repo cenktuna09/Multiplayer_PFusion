@@ -721,7 +721,7 @@ GameObject:
   m_Component:
   - component: {fileID: 153598555}
   m_Layer: 0
-  m_Name: GameObject
+  m_Name: ShapeStartPos
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -815,6 +815,10 @@ PrefabInstance:
       propertyPath: m_Mesh
       value: 
       objectReference: {fileID: -1412318892563736697, guid: 7e66140138cd5354181eada2b987efcb, type: 3}
+    - target: {fileID: 4471240036840911760, guid: e3a74b77680a4554dbf60bbd03ab5c8d, type: 3}
+      propertyPath: m_Name
+      value: CircleShape
+      objectReference: {fileID: 0}
     - target: {fileID: 6758739441588058331, guid: e3a74b77680a4554dbf60bbd03ab5c8d, type: 3}
       propertyPath: m_LocalScale.x
       value: 0.42548
@@ -895,6 +899,14 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _Type: 2
   _IsPickedUp:
+    _value: 0
+  _IsColliderTrigger:
+    _value: 0
+  _IsColliderEnabled:
+    _value: 0
+  _IsPickupTriggerEnabled:
+    _value: 0
+  _IsKinematic:
     _value: 0
   Rigidbody: {fileID: 163811268}
   ShapeCollider: {fileID: 163811269}
@@ -2164,7 +2176,7 @@ GameObject:
   m_Component:
   - component: {fileID: 539844290}
   m_Layer: 0
-  m_Name: GameObject (1)
+  m_Name: ShapeStartPos
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -16045,10 +16057,13 @@ MonoBehaviour:
   openAudioClip: {fileID: 8300000, guid: dc86f3bef8384e145b23fba67a4f02ad, type: 3}
   closeAudioClip: {fileID: 0}
   audioVolume: 1
+  ShowDebugLogs: 1
   _IsOpen:
     _value: 0
   _TickActivated: 0
   _IsUnlocked:
+    _value: 0
+  _IsDestroyed:
     _value: 0
 --- !u!114 &1907841982
 MonoBehaviour:
@@ -16064,7 +16079,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   SortKey: 3221865189
   ObjectInterest: 1
-  Flags: 262145
+  Flags: 131073
   NestedObjects: []
   NetworkedBehaviours:
   - {fileID: 1907841981}
@@ -16732,6 +16747,10 @@ PrefabInstance:
       propertyPath: m_CollisionDetection
       value: 2
       objectReference: {fileID: 0}
+    - target: {fileID: 4471240036840911760, guid: e3a74b77680a4554dbf60bbd03ab5c8d, type: 3}
+      propertyPath: m_Name
+      value: CubeShape
+      objectReference: {fileID: 0}
     - target: {fileID: 8048021861965253828, guid: e3a74b77680a4554dbf60bbd03ab5c8d, type: 3}
       propertyPath: m_Name
       value: RigidbodyTriangle (4)
@@ -16800,6 +16819,14 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _Type: 1
   _IsPickedUp:
+    _value: 0
+  _IsColliderTrigger:
+    _value: 0
+  _IsColliderEnabled:
+    _value: 0
+  _IsPickupTriggerEnabled:
+    _value: 0
+  _IsKinematic:
     _value: 0
   Rigidbody: {fileID: 1993383513}
   ShapeCollider: {fileID: 1993383514}
