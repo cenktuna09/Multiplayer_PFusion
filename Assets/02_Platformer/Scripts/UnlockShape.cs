@@ -34,6 +34,9 @@ namespace Starter.Platformer
         // Debug settings
         public bool ShowDebugLogs = true;
 
+        // Track if particle color has been updated
+        private bool _hasUpdatedParticleColor = false;
+
         public override void Spawned()
         {
             // Find GameManager if not assigned
@@ -42,9 +45,6 @@ namespace Starter.Platformer
                 GameManager = FindObjectOfType<GameManager>();
                 DebugLog("Found GameManager: " + (GameManager != null));
             }
-            
-            // Initialize unlock state visual
-            UpdateUnlockVisual();
             
             DebugLog($"UnlockShape spawned. Type: {Type}, IsUnlocked: {IsUnlocked}");
         }
@@ -56,18 +56,19 @@ namespace Starter.Platformer
             DebugLog($"ShapeType set to: {type}");
         }
 
-        // Update visual state based on unlock state
-        private void UpdateUnlockVisual()
+        public override void Render()
         {
+            // Update visual state in Render for all clients
             if (LockedVisual != null) LockedVisual.SetActive(!IsUnlocked);
             if (UnlockedVisual != null) UnlockedVisual.SetActive(IsUnlocked);
             
-            // Update particles color if unlocked
-            if (IsUnlocked && ZoneParticles != null)
+            // Update particles color if unlocked and not already updated
+            if (IsUnlocked && ZoneParticles != null && !_hasUpdatedParticleColor)
             {
                 // Set green color for successful unlock
                 var main = ZoneParticles.main;
                 main.startColor = Color.green;
+                _hasUpdatedParticleColor = true;
             }
         }
 
@@ -92,11 +93,6 @@ namespace Starter.Platformer
                         DebugLog($"KeyShape type ({keyShape.Type}) MATCHES UnlockShape type ({Type}). Cannot unlock!");
                         return false;
                     }
-                    else
-                    {
-                        // Green color for correct placement (non-matching shapes)
-                        main.startColor = Color.green;
-                    }
                 }
                 
                 // "Wrong Answers Only" mechanic:
@@ -109,9 +105,6 @@ namespace Starter.Platformer
                     // Play unlock sound
                     if (UnlockSound != null)
                         AudioSource.PlayClipAtPoint(UnlockSound, transform.position, UnlockSoundVolume);
-                    
-                    // Update visuals
-                    UpdateUnlockVisual();
                     
                     // Notify GameManager about the solved puzzle
                     NotifyGameManager();
@@ -147,7 +140,7 @@ namespace Starter.Platformer
             if (HasStateAuthority)
             {
                 IsUnlocked = false;
-                UpdateUnlockVisual();
+                _hasUpdatedParticleColor = false;
                 DebugLog("Lock reset");
             }
         }

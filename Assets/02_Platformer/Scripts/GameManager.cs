@@ -40,8 +40,8 @@ namespace Starter.Platformer
 			if (Winner != PlayerRef.None)
 				return; // Someone was faster
 
-			if (player.CollectedCoins < MinCoinsToWin)
-				return; // Not enough coins
+			if (SolvedPuzzleCount < RequiredPuzzlesToUnlock)
+				return; // Not enough puzzles
 
 			Winner = player.Object.StateAuthority;
 			GameOverTimer = TickTimer.CreateFromSeconds(Runner, GameOverTime);
