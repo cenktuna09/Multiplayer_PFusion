@@ -30,7 +30,7 @@ namespace Starter.Platformer
         // Visual representation to make shape type visible
         public GameObject TriangleVisual;
         public GameObject SquareVisual;
-        public GameObject RectangleVisual;
+        public GameObject CircleVisual;
         
         // Sound when picked up 
         public AudioClip PickupSound;
@@ -119,7 +119,7 @@ namespace Starter.Platformer
         {
             if (TriangleVisual != null) TriangleVisual.SetActive(Type == ShapeType.Triangle);
             if (SquareVisual != null) SquareVisual.SetActive(Type == ShapeType.Square);
-            if (RectangleVisual != null) RectangleVisual.SetActive(Type == ShapeType.Circle);
+            if (CircleVisual != null) CircleVisual.SetActive(Type == ShapeType.Circle);
         }
         
         // Make the shape fall when platform falls
@@ -133,12 +133,6 @@ namespace Starter.Platformer
             // Enable pickup trigger when the shape falls
             PickupTrigger.enabled = true;
             DebugLog($"started falling. PickupTrigger enabled: {PickupTrigger.enabled}");
-
-            // Show interaction text when shape starts falling
-            if (InteractionText != null)
-            {
-                InteractionText.gameObject.SetActive(true);
-            }
         }
         
         // Request pickup via RPC - call this from the client
@@ -168,12 +162,6 @@ namespace Starter.Platformer
                 
                 // Disable pickup trigger
                 PickupTrigger.enabled = false;
-
-                // Update text when picked up
-                if (InteractionText != null)
-                {
-                    InteractionText.text = DropPrompt;
-                }
                 
                 // Random Up Force
                 float randomUpForce = Random.Range(5f, 10f);
@@ -213,12 +201,6 @@ namespace Starter.Platformer
                 
                 // Re-enable pickup trigger
                 PickupTrigger.enabled = true;
-
-                // Update text when dropped
-                if (InteractionText != null)
-                {
-                    InteractionText.text = PickupPrompt;
-                }
             }
         }
         
@@ -269,6 +251,22 @@ namespace Starter.Platformer
             {
                 // Use Slerp for smooth movement
                 transform.position = Vector3.Slerp(transform.position, NetworkPosition, Time.deltaTime * 2.5f);
+            }
+
+            // Update UI text state
+            if (InteractionText != null)
+            {
+                // Update text visibility based on pickup trigger state
+                InteractionText.gameObject.SetActive(PickupTrigger.enabled || IsPickedUp);
+
+                // Update text content based on pickup state
+                InteractionText.text = IsPickedUp ? DropPrompt : PickupPrompt;
+
+                // Make text face camera
+                if (Camera.main != null && InteractionText.gameObject.activeInHierarchy)
+                {
+                    InteractionText.transform.rotation = Camera.main.transform.rotation;
+                }
             }
         }
         

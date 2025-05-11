@@ -868,9 +868,9 @@ MonoBehaviour:
   ShapeCollider: {fileID: 163811269}
   PickupTrigger: {fileID: 0}
   PickupTriggerRadius: 1.5
-  TriangleVisual: {fileID: 163811266}
+  TriangleVisual: {fileID: 0}
   SquareVisual: {fileID: 0}
-  RectangleVisual: {fileID: 0}
+  CircleVisual: {fileID: 163811266}
   PickupSound: {fileID: 8300000, guid: dc86f3bef8384e145b23fba67a4f02ad, type: 3}
   PickupSoundVolume: 0.5
   WorldSpaceCanvas: {fileID: 1004759201}
@@ -16676,7 +16676,7 @@ MonoBehaviour:
   PickupTriggerRadius: 1.5
   TriangleVisual: {fileID: 0}
   SquareVisual: {fileID: 1993383511}
-  RectangleVisual: {fileID: 0}
+  CircleVisual: {fileID: 0}
   PickupSound: {fileID: 8300000, guid: dc86f3bef8384e145b23fba67a4f02ad, type: 3}
   PickupSoundVolume: 0.5
   WorldSpaceCanvas: {fileID: 816821681}
