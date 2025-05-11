@@ -20,6 +20,14 @@ namespace Starter.Platformer
         
         [Networked]
         private NetworkBool _wasUnlockedByDisconnectedPlayer { get; set; }
+        
+        // New: Track particle color state via network
+        [Networked]
+        private int _networkParticleColorState { get; set; } // 0=yellow, 1=green, 2=red
+        
+        // Last change tick
+        [Networked]
+        private int _particleColorChangedTick { get; set; }
 
         // Reference to GameManager
         public GameManager GameManager; 
@@ -45,6 +53,9 @@ namespace Starter.Platformer
         
         // Store initial unlocked state for reconnection
         private bool _initialUnlockState = false;
+        
+        // State for last applied particle color change
+        private int _lastAppliedColorState = -1;
 
         public override void Spawned()
         {
@@ -59,6 +70,9 @@ namespace Starter.Platformer
             _previousLockState = IsUnlocked;
             _initialUnlockState = IsUnlocked;
             
+            // Starting Color : Yellow
+            _networkParticleColorState = 0;
+            
             DebugLog($"UnlockShape spawned. Type: {Type}, IsUnlocked: {IsUnlocked}");
             
             // Ensure visuals match current state immediately
@@ -72,18 +86,36 @@ namespace Starter.Platformer
             if (UnlockedVisual != null) UnlockedVisual.SetActive(IsUnlocked);
             
             // Update particle color based on unlock state
-            if (ZoneParticles != null)
+            UpdateParticleColor();
+        }
+        
+        // Update particle color based on networked state
+        private void UpdateParticleColor()
+        {
+            // If the particle system exists and the last applied color is different
+            if (ZoneParticles != null && _lastAppliedColorState != _networkParticleColorState)
             {
                 var main = ZoneParticles.main;
-                if (IsUnlocked)
+                
+                // Apply the color change based on the networked state
+                switch (_networkParticleColorState)
                 {
-                    main.startColor = Color.green;
-                    _hasUpdatedParticleColor = true;
+                    case 0: // Yellow (locked)
+                        main.startColor = Color.yellow;
+                        DebugLog("Setting particle color to yellow (from network state)");
+                        break;
+                    case 1: // Green (unlocked)
+                        main.startColor = Color.green;
+                        DebugLog("Setting particle color to green (from network state)");
+                        break;
+                    case 2: // Red (wrong match)
+                        main.startColor = Color.red;
+                        DebugLog("Setting particle color to red (from network state)");
+                        break;
                 }
-                else
-                {
-                    main.startColor = Color.yellow;
-                }
+                
+                // Apply the color change
+                _lastAppliedColorState = _networkParticleColorState;
             }
         }
 
@@ -100,27 +132,47 @@ namespace Starter.Platformer
             if (LockedVisual != null) LockedVisual.SetActive(!IsUnlocked);
             if (UnlockedVisual != null) UnlockedVisual.SetActive(IsUnlocked);
             
-            // Only update particle color when lock state changes
-            if (ZoneParticles != null && (_previousLockState != IsUnlocked || !_hasUpdatedParticleColor && IsUnlocked))
+            // Check and update particle color every frame
+            UpdateParticleColor();
+            
+            // Only log when the state changes
+            if (_previousLockState != IsUnlocked)
             {
-                var main = ZoneParticles.main;
                 if (IsUnlocked)
                 {
-                    // Set green color for successful unlock
-                    DebugLog("Setting particle color to green");
-                    main.startColor = Color.green;
-                    _hasUpdatedParticleColor = true;
+                    DebugLog("UnlockShape is now unlocked, updating visuals");
                 }
                 else
                 {
-                    // Set yellow color when locked
-                    DebugLog("Setting particle color to yellow");
-                    main.startColor = Color.yellow;
+                    DebugLog("UnlockShape is now locked, updating visuals");
                 }
-                
-                // Update previous state
                 _previousLockState = IsUnlocked;
             }
+        }
+        
+        // Public method to set particle color - all changes should go through here
+        public void SetParticleColor(Color color)
+        {
+            if (!HasStateAuthority) return;
+            
+            if (color == Color.yellow)
+            {
+                _networkParticleColorState = 0;
+                DebugLog("Set networked particle color to YELLOW");
+            }
+            else if (color == Color.green)
+            {
+                _networkParticleColorState = 1;
+                DebugLog("Set networked particle color to GREEN");
+            }
+            else if (color == Color.red)
+            {
+                _networkParticleColorState = 2;
+                DebugLog("Set networked particle color to RED");
+            }
+            
+            // Save the color change tick
+            _particleColorChangedTick = Runner.Tick;
         }
 
         // Try to unlock with a key shape
@@ -141,12 +193,10 @@ namespace Starter.Platformer
                 // Set particle color based on match result
                 if (ZoneParticles != null)
                 {
-                    var main = ZoneParticles.main;
-                    
                     if (keyShape.Type == Type)
                     {
                         // Red color for incorrect placement (matching shapes)
-                        main.startColor = Color.red;
+                        SetParticleColor(Color.red);
                         DebugLog($"KeyShape type ({keyShape.Type}) MATCHES UnlockShape type ({Type}). Cannot unlock!");
                         return false;
                     }
@@ -164,6 +214,9 @@ namespace Starter.Platformer
                     _hasUpdatedParticleColor = true;
                     _wasUnlockedByDisconnectedPlayer = false;
                     
+                    // Green color for successful unlock
+                    SetParticleColor(Color.green);
+                    
                     // Play unlock sound
                     if (UnlockSound != null)
                         AudioSource.PlayClipAtPoint(UnlockSound, transform.position, UnlockSoundVolume);
@@ -171,7 +224,7 @@ namespace Starter.Platformer
                     // Update visuals immediately 
                     UpdateVisuals();
                     
-                    // Önemli: Notify GameManager about the solved puzzle
+                    // Important: Notify GameManager about the puzzle is solved
                     NotifyGameManager();
                     
                     return true;
@@ -227,18 +280,14 @@ namespace Starter.Platformer
             {
                 DebugLog($"ResetLock called. Current state - IsUnlocked: {IsUnlocked}, _wasUnlockedByDisconnectedPlayer: {_wasUnlockedByDisconnectedPlayer}");
                 
-                // Kesinlikle kilitli duruma getir
+                // Forcefully lock the shape
                 IsUnlocked = false;
                 _hasUpdatedParticleColor = false;
                 _previousLockState = false;
                 _wasUnlockedByDisconnectedPlayer = false;
                 
-                // Reset the particle color to default
-                if (ZoneParticles != null)
-                {
-                    var main = ZoneParticles.main;
-                    main.startColor = Color.yellow; // Reset to default color
-                }
+                // Reset the particle color to yellow (locked state)
+                SetParticleColor(Color.yellow);
                 
                 // Update visuals immediately
                 UpdateVisuals();
@@ -271,17 +320,13 @@ namespace Starter.Platformer
             _previousLockState = false;
             _wasUnlockedByDisconnectedPlayer = false;
             
-            // Reset the particle color
-            if (ZoneParticles != null)
-            {
-                var main = ZoneParticles.main;
-                main.startColor = Color.yellow;
-            }
+            // Reset the particle color to yellow
+            SetParticleColor(Color.yellow);
             
-            // Görsel durumu güncelle
+            // Update visuals
             UpdateVisuals();
             
-            // Ekstra kontrol
+            // Extra check
             if (LockedVisual != null) LockedVisual.SetActive(true);
             if (UnlockedVisual != null) UnlockedVisual.SetActive(false);
             
