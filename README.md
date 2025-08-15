@@ -1,6 +1,4 @@
----
-
-## 🎮 Project Overview
+🎮 Project Overview
 
 **Game Type**: Multiplayer Competitive Platformer  
 **Network Architecture**: Client-Server with State Authority  
